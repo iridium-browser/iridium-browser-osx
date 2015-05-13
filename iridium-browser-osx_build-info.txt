@@ -1,0 +1,71 @@
+Build info for Iridium browser for OSX.
+
+Created: 25.11.2014
+Last updated: 29.04.2015
+Author: Yuriy Shevchuk
+Copyright: struktur AG, 2014-2015
+
+
+At the moment of writing the next general scheme to build iridium-browser is used:
+We get Chromium sources of the specified version, fetch all the dependencies,
+apply iridium-browser patch, generate build instructions for ninja and build.
+This build process is tested with
+- OSX 10.9.5 with 10.9 SDK
+- OSX 10.10.3 with 10.10 SDK
+
+
+Starting from 27.02.2015 (version 40.0.x.x) due to building MAS compatible version
+we are moving from x.x.x.x versioning scheme to x.x.x versioning scheme.
+
+x.x.x is Iridium's own versioning scheme:
+1. First number(e.g. 40) is the version numbers is Chromium major version
+2. Second number (e.g. 2) is Iridium patch version.
+3. The last number is specific to OSX build number.
+This can be used as to keep track of source code changes which are not synced yet to main patch or
+any other OSX related changes (e.g. increasing build numbers for MAS uploads)
+
+
+In order to build Iridium for OSX setup your signing identities in build.config
+and then simply run "build.sh -m <mas/iad/nosign>".
+mas - Mac App Store version
+iad - Identified Apple Developer outside of MAS version
+nosign - unsigned default version (no adjustments for MAS basically unsigned IAD version)
+
+If you do not setup your signing identities in build.config script will automatically search for
+signing identities in your default keychain and take the first identity which satisfies search criteria.
+If you have multiple signing identities the wrong one could be picked up.
+
+You should setup correct TeamID into iridium-osx-patch.sh since this script will edit patch to include your TeamID
+for IPC in sandboxed environment. Check patchs/ir-osx-sandbox-apple-dev.diff.in and code_signign/mas_sign.sh.
+
+After running the script you should get signed and packaged build ready for distribution.
+This script is intended to be used as production builds builder if you need dev builds you should
+know what adjustments need to be made to it to suit your needs.
+
+Please be aware if you ssh to some machine and try to build Iridium you will not be able to sign it
+unless you unlock your keychain with signing identities with `security unlock-keychain -p passphrase`.
+If you try to unlock keychain with `security unlock-keychain` and enter passphrase in prompt it will
+NOT work!! Check:
+https://stackoverflow.com/questions/20205162/user-interaction-is-not-allowed-trying-to-sign-an-osx-app-using-codesign
+https://stackoverflow.com/questions/26475404/xcode-codesign-error-from-jenkins-ssh-user-interaction-is-not-allowed
+
+
+Sometimes syncing with gclient fails with errors like this:
+
+Syncing projects:  43% (32/73) src/third_party/WebKit
+
+src/third_party/jsoncpp/source (ERROR)
+----------------------------------------
+[0:00:31] Started.
+----------------------------------------
+Error: 28> We could not find a valid hash for safesync_url response "commit_hash".
+28> Safesync URLs with a git checkout currently require a git-svn
+28> remote or a safesync_url that provides git sha1s. Please add a
+28> git-svn remote or change your safesync_url. For more info, see:
+28> http://code.google.com/p/chromium/wiki/UsingNewGit#Initial_checkout
+
+I haven't found a way to rememdy this issue so the quickest way to deal with it is just to delete
+the dependency that failed and restart script.
+This usually happens for me with jsoncpp, icu, webpagereplay. Sometimes with 3 of them sequentially.
+It seems to me that this is connected to some rebases or history changes in repo if you didn't sync
+for some time.

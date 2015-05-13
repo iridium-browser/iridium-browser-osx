@@ -1,0 +1,13 @@
+diff --git a/breakpad/src/client/mac/sender/crash_report_sender-Info.plist b/breakpad/src/client/mac/sender/crash_report_sender-Info.plist
+index 976687e..fda42b7 100644
+--- a/breakpad/src/client/mac/sender/crash_report_sender-Info.plist
++++ b/breakpad/src/client/mac/sender/crash_report_sender-Info.plist
+@@ -11,7 +11,7 @@
+        <key>CFBundleIconFile</key>
+        <string>crash_report_sender</string>
+        <key>CFBundleIdentifier</key>
+-       <string>com.Breakpad.${PRODUCT_NAME:identifier}</string>
++       <string>com.Breakpad.crash-report-sender</string>
+        <key>CFBundleInfoDictionaryVersion</key>
+        <string>6.0</string>
+        <key>CFBundleName</key>

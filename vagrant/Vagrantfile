@@ -1,0 +1,107 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+# Iridium browser OSX Vagrantfile for building
+# Copyright (C) 2015 struktur AG <opensource@struktur.de>
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+
+require 'pathname'
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure(2) do |config|
+
+  # Box config
+  config.vm.box = "osx10.10.3-xcode6.3"
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 4096
+    v.cpus = 4
+  end
+
+  # Disable synced folders since they are not supported with darwin guest.
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  # Disable key update since this is not supported with darwin guest.
+  config.ssh.insert_key = false
+
+
+  # =========== Building part ===========
+
+  # 1. Create identities directory
+  $script_create_identities_dir = <<-SHELL
+    mkdir -p /Users/vagrant/identities
+    chown vagrant:staff /Users/vagrant/identities
+  SHELL
+  config.vm.provision "shell", inline: $script_create_identities_dir, privileged: false
+
+  # 2. Copy all .p12 files from Vagrant file dir to identities dir
+  (Dir.glob('*.p12').select{ |e| File.file? e }).each do |f|
+    source_file = Pathname.new f
+    destination_file = Pathname.new f
+    config.vm.provision "file" do |fp|
+      fp.source = source_file.to_s
+      fp.destination = "/Users/vagrant/identities/" + destination_file.to_s
+    end
+  end
+
+  # 3. Clone iridium-browser-osx repo with build scripts
+  $script_clone_build_scripts_repo = <<-SHELL
+    mkdir -p iridium
+    cd iridium
+    if [ ! -d iridium-browser-osx ]; then
+      git clone https://github.com/strukturag/iridium-browser-osx.git iridium-browser-osx
+    fi
+  SHELL
+  config.vm.provision "shell", inline: $script_clone_build_scripts_repo, privileged: false
+
+  # 4. Import identities into new keychain
+  $script_import_identities = <<-SHELL
+    security create-keychain -p vagrant /Users/vagrant/Library/Keychains/signing.keychain
+    security list-keychains -s /Users/vagrant/Library/Keychains/signing.keychain
+    security default-keychain -s /Users/vagrant/Library/Keychains/signing.keychain
+    security unlock-keychain -p vagrant
+    security set-keychain-settings -u /Users/vagrant/Library/Keychains/signing.keychain
+    cd /Users/vagrant/iridium/iridium-browser-osx/code_signing
+    echo `pwd`
+    ./import_identities.sh /Users/vagrant/identities -p vagrant -c vagrant -k /Users/vagrant/Library/Keychains/signing.keychain
+    echo "Imported identities"
+  SHELL
+  config.vm.provision "shell", inline: $script_import_identities, privileged: false
+
+  # 5. Run build scripts
+  $script_build = <<-SHELL
+    security list-keychains -s /Users/vagrant/Library/Keychains/signing.keychain
+    security default-keychain -s /Users/vagrant/Library/Keychains/signing.keychain
+    security unlock-keychain -p vagrant
+    cd iridium/iridium-browser-osx
+    ./build.sh -m mas
+    security lock-keychain
+  SHELL
+  config.vm.provision "shell", inline: $script_build, privileged: false
+
+  # 6. Delete signing keychain with imported identities
+  $script_clean_up_keychain = <<-SHELL
+    security delete-keychain /Users/vagrant/Library/Keychains/signing.keychain
+    echo "Cleaned up keychain"
+  SHELL
+  config.vm.provision "shell", inline: $script_clean_up_keychain, privileged: false
+
+end

@@ -1,0 +1,101 @@
+diff --git a/build/common.gypi b/build/common.gypi
+index 7ec5ae2..608c8f4 100644
+--- a/build/common.gypi
++++ b/build/common.gypi
+@@ -5007,6 +5007,7 @@
+           # (Included by system header. Also exists on iOS but not included.)
+           # http://opensource.apple.com/source/CarbonHeaders/CarbonHeaders-18.1/AssertMacros.h
+           '__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0',
++          'MAC_APP_STORE',
+         ],
+         'variables': {
+           # These should end with %, but there seems to be a bug with % in
+diff --git a/chrome/chrome_exe.gypi b/chrome/chrome_exe.gypi
+index 3fe83f1..71c704c 100644
+--- a/chrome/chrome_exe.gypi
++++ b/chrome/chrome_exe.gypi
+@@ -334,10 +342,18 @@
+             },
+           ],
+           'postbuilds': [
++#            {
++#              'postbuild_name': 'Copy <(mac_product_name) Framework.framework',
++#              'action': [
++#                '../build/mac/copy_framework_unversioned.sh',
++#                '${BUILT_PRODUCTS_DIR}/<(mac_product_name) Framework.framework',
++#                '${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}/Versions/<(version_full)',
++#              ],
++#            },
+             {
+               'postbuild_name': 'Copy <(mac_product_name) Framework.framework',
+               'action': [
+-                '../build/mac/copy_framework_unversioned.sh',
++                'cp', '-Rf',
+                 '${BUILT_PRODUCTS_DIR}/<(mac_product_name) Framework.framework',
+                 '${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}/Versions/<(version_full)',
+               ],
+diff --git a/media/media.gyp b/media/media.gyp
+index 8b2606a..6400011 100644
+--- a/media/media.gyp
++++ b/media/media.gyp
+@@ -895,7 +895,7 @@
+               '$(SDKROOT)/System/Library/Frameworks/CoreMIDI.framework',
+               '$(SDKROOT)/System/Library/Frameworks/CoreVideo.framework',
+               '$(SDKROOT)/System/Library/Frameworks/OpenGL.framework',
+-              '$(SDKROOT)/System/Library/Frameworks/QTKit.framework',
++              #'$(SDKROOT)/System/Library/Frameworks/QTKit.framework',
+             ],
+           },
+         }],
+diff --git a/third_party/libjingle/source/talk/libjingle.gyp b/third_party/libjingle/source/talk/libjingle.gyp
+index 90d1f41..83985b2 100755
+--- a/third_party/libjingle/source/talk/libjingle.gyp
++++ b/third_party/libjingle/source/talk/libjingle.gyp
+@@ -515,7 +515,7 @@
+                 '-framework CoreAudio',
+                 '-framework CoreVideo',
+                 '-framework OpenGL',
+-                '-framework QTKit',
++                #'-framework QTKit',
+               ],
+             },
+           },
+diff --git a/third_party/webrtc/modules/video_capture/video_capture.gypi b/third_party/webrtc/modules/video_capture/video_capture.gypi
+index 22b8e02..678da5c 100644
+--- a/third_party/webrtc/modules/video_capture/video_capture.gypi
++++ b/third_party/webrtc/modules/video_capture/video_capture.gypi
+@@ -79,7 +79,7 @@
+               'OTHER_LDFLAGS': [
+                 '-framework Cocoa',
+                 '-framework CoreVideo',
+-                '-framework QTKit',
++                #'-framework QTKit',
+               ],
+             },
+           },
+diff --git a/tools/gyp/tools/emacs/testdata/media.gyp b/tools/gyp/tools/emacs/testdata/media.gyp
+index 29300fe..5ae9efd 100644
+--- a/tools/gyp/tools/emacs/testdata/media.gyp
++++ b/tools/gyp/tools/emacs/testdata/media.gyp
+@@ -438,7 +438,7 @@
+               '$(SDKROOT)/System/Library/Frameworks/AudioToolbox.framework',
+               '$(SDKROOT)/System/Library/Frameworks/CoreAudio.framework',
+               '$(SDKROOT)/System/Library/Frameworks/CoreVideo.framework',
+-              '$(SDKROOT)/System/Library/Frameworks/QTKit.framework',
++              #'$(SDKROOT)/System/Library/Frameworks/QTKit.framework',
+             ],
+           },
+         }],
+diff --git a/tools/gyp/tools/emacs/testdata/media.gyp.fontified b/tools/gyp/tools/emacs/testdata/media.gyp.fontified
+index 962b7b2..cb3032b 100644
+--- a/tools/gyp/tools/emacs/testdata/media.gyp.fontified
++++ b/tools/gyp/tools/emacs/testdata/media.gyp.fontified
+@@ -439,7 +439,7 @@
+               '$(SDKROOT)/System/Library/Frameworks/AudioToolbox.framework',
+               '$(SDKROOT)/System/Library/Frameworks/CoreAudio.framework',
+               '$(SDKROOT)/System/Library/Frameworks/CoreVideo.framework',
+-              '$(SDKROOT)/System/Library/Frameworks/QTKit.framework',
++              #'$(SDKROOT)/System/Library/Frameworks/QTKit.framework',
+             ],
+           },
+         }],
