@@ -50,9 +50,18 @@ If you do not setup your keychain correctly signing will fail.
 
 ### Vagrant
 
-Additionally you can now use Vagrantfile shipped with the repo.
+Additionally you can now use Vagrantfile shipped with the repo. Tested with VirtualBox as a provider.
 
 You will need your own(because of OSX licensing) OSX vagrant box with Xcode (min 60 GB free space after OS installation).
+
+Information related to how to make your Vagrant base box is here:
+
+* https://docs.vagrantup.com/v2/virtualbox/boxes.html
+
+* http://www.skoblenick.com/vagrant/vmware-fusion/creating-an-osx-base-box/
+
+* https://github.com/AndrewDryga/vagrant-box-osx
+
 
 Provisioning scripts in Vagrantfile assume:
 
