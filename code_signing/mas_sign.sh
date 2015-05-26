@@ -89,13 +89,6 @@ ENTITLEMENTS_P="<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 	<true/>
 	<key>com.apple.security.print</key>
 	<true/>
-	<key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>
-	<array>
-		<string>/</string>
-		<string>/private/tmp/</string>
-		<string>/private/var/tmp/</string>
-		<string>/private/var/folders/ml/</string>
-	</array>
 </dict>
 </plist>
 "

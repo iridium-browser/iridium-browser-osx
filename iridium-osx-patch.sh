@@ -39,7 +39,7 @@ CHROMIUM_VERSION="6e0744b15b09421eac6634fb3fb7fe0a03427d56"
 IRIDIUM_PATCH_FILE="ir-41.2.x-41.0.2272.118.diff"
 
 # This is a patch file of changes which were not yet synced with main Iririum repo
-IRIDIUM_UNSYNCED_PATCH_FILE=
+IRIDIUM_UNSYNCED_PATCH_FILE="ir-unsynced.diff"
 
 IRIDIUM_VERSION_PATCH_FILE="ir-version.diff"
 IRIDIUM_MAC_APP_STORE_ENABLE_PATCH="mas_enable.diff"

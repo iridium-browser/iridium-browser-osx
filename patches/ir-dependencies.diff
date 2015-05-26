@@ -11,3 +11,152 @@ index 976687e..fda42b7 100644
         <key>CFBundleInfoDictionaryVersion</key>
         <string>6.0</string>
         <key>CFBundleName</key>
+
+diff --git a/third_party/WebKit/Source/platform/mac/KillRingMac.mm b/third_party/WebKit/Source/platform/mac/KillRingMac.mm
+index 63fd8f8..e1cf0af 100644
+--- a/third_party/WebKit/Source/platform/mac/KillRingMac.mm
++++ b/third_party/WebKit/Source/platform/mac/KillRingMac.mm
+@@ -30,6 +30,7 @@ namespace blink {
+
+ extern "C" {
+
++#ifndef MAC_APP_STORE
+ // Kill ring calls. Would be better to use NSKillRing.h, but that's not available as API or SPI.
+
+ void _NSInitializeKillRing();
+@@ -39,45 +40,60 @@ NSString *_NSYankFromKillRing();
+ void _NSNewKillRingSequence();
+ void _NSSetKillRingToYankedState();
+
++#endif // MAC_APP_STORE
+ }
+
+ static void initializeKillRingIfNeeded()
+ {
++#ifndef MAC_APP_STORE
+     static bool initializedKillRing = false;
+     if (!initializedKillRing) {
+         initializedKillRing = true;
+         _NSInitializeKillRing();
+     }
++#endif // MAC_APP_STORE
+ }
+
+ void KillRing::append(const String& string)
+ {
++#ifndef MAC_APP_STORE
+     initializeKillRingIfNeeded();
+     _NSAppendToKillRing(string);
++#endif // MAC_APP_STORE
+ }
+
+ void KillRing::prepend(const String& string)
+ {
++#ifndef MAC_APP_STORE
+     initializeKillRingIfNeeded();
+     _NSPrependToKillRing(string);
++#endif // MAC_APP_STORE
+ }
+
+ String KillRing::yank()
+ {
++#ifndef MAC_APP_STORE
+     initializeKillRingIfNeeded();
+     return _NSYankFromKillRing();
++#else
++    return String();
++#endif // MAC_APP_STORE
+ }
+
+ void KillRing::startNewSequence()
+ {
++#ifndef MAC_APP_STORE
+     initializeKillRingIfNeeded();
+     _NSNewKillRingSequence();
++#endif // MAC_APP_STORE
+ }
+
+ void KillRing::setToYankedState()
+ {
++#ifndef MAC_APP_STORE
+     initializeKillRingIfNeeded();
+     _NSSetKillRingToYankedState();
++#endif // MAC_APP_STORE
+ }
+
+ } // namespace blink
+
+diff --git a/third_party/WebKit/Source/core/rendering/RenderThemeChromiumMac.mm b/third_party/WebKit/Source/core/rendering/RenderThemeChromiumMac.mm
+index 9eb17d4..7c912d6 100644
+--- a/third_party/WebKit/Source/core/rendering/RenderThemeChromiumMac.mm
++++ b/third_party/WebKit/Source/core/rendering/RenderThemeChromiumMac.mm
+@@ -141,9 +141,13 @@ const double progressAnimationNumFrames = 256;
+
+ // Forward declare Mac SPIs.
+ extern "C" {
++#ifndef MAC_APP_STORE
+ void _NSDrawCarbonThemeBezel(NSRect frame, BOOL enabled, BOOL flipped);
+ // Request for public API: rdar://13787640
+ void _NSDrawCarbonThemeListBox(NSRect frame, BOOL enabled, BOOL flipped, BOOL always_yes);
++#else
++
++#endif
+ }
+
+ namespace blink {
+@@ -699,9 +703,12 @@ bool RenderThemeChromiumMac::paintTextField(RenderObject* o, const PaintInfo& pa
+     // background. We need WebCore to paint styled backgrounds, so we'll use
+     // this AppKit SPI function instead.
+     if (!useNSTextFieldCell) {
++#ifndef MAC_APP_STORE
+         _NSDrawCarbonThemeBezel(r, isEnabled(o) && !isReadOnlyControl(o), YES);
++#endif //MAC_APP_STORE
+         return false;
+     }
++
+ #endif
+
+     NSTextFieldCell *textField = this->textField();
+@@ -780,7 +787,9 @@ bool RenderThemeChromiumMac::paintCapsLockIndicator(RenderObject*, const PaintIn
+ bool RenderThemeChromiumMac::paintTextArea(RenderObject* o, const PaintInfo& paintInfo, const IntRect& r)
+ {
+     LocalCurrentGraphicsContext localContext(paintInfo.context, r);
++#ifndef MAC_APP_STORE
+     _NSDrawCarbonThemeListBox(r, isEnabled(o) && !isReadOnlyControl(o), YES, YES);
++#endif
+     return false;
+ }
+
+diff --git a/third_party/google_toolbox_for_mac/src/Foundation/GTMServiceManagement.c b/third_party/google_toolbox_for_mac/src/Foundation/GTMServiceManagement.c
+index efdc68e..cc44abd 100644
+--- a/third_party/google_toolbox_for_mac/src/Foundation/GTMServiceManagement.c
++++ b/third_party/google_toolbox_for_mac/src/Foundation/GTMServiceManagement.c
+@@ -731,6 +731,8 @@ CFDictionaryRef GTMSMCopyAllJobDictionaries(void) {
+   return dict;
+ }
+
++
++#ifndef MAC_APP_STORE
+ // Some private SPIs defined by apple in the launchd sources
+ // http://opensource.apple.com/source/launchd/launchd-258.25/launchd/src/
+ // and
+@@ -749,9 +751,12 @@ extern vproc_err_t vproc_swap_complex(vproc_t vp,
+                                       launch_data_t inval,
+                                       launch_data_t *outval);
+
++#endif //MAC_APP_STORE
++
+ CFDictionaryRef GTMCopyLaunchdExports(void) {
+   launch_data_t resp;
+   CFDictionaryRef dict = NULL;
++#ifndef MAC_APP_STORE
+   vproc_err_t err = vproc_swap_complex(NULL,
+                                        VPROC_GSK_ENVIRONMENT_10_5,
+                                        NULL,
+@@ -770,6 +775,7 @@ CFDictionaryRef GTMCopyLaunchdExports(void) {
+     }
+     launch_data_free(resp);
+   }
++#endif //MAC_APP_STORE
+   return dict;
+ }

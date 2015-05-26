@@ -1,0 +1,228 @@
+diff --git a/chrome/common/mac/cfbundle_blocker.h b/chrome/common/mac/cfbundle_blocker.h
+index 4222035..67be069 100644
+--- a/chrome/common/mac/cfbundle_blocker.h
++++ b/chrome/common/mac/cfbundle_blocker.h
+@@ -28,6 +28,8 @@ namespace mac {
+ //
+ // This mechanism does not prevent CFBundle (or NSBundle) objects from being
+ // created, but it does block them from loading modules into the process.
++// This function uses a private function not declared by <CoreFoundation/CoreFoundation.h>.
++// If MAC_APP_STORE is defined, this function does nothing to avoid usage of private API.
+ void EnableCFBundleBlocker();
+ 
+ // Returns true if |bundle_id| and |version| identify a bundle that is allowed
+diff --git a/chrome/common/mac/cfbundle_blocker.mm b/chrome/common/mac/cfbundle_blocker.mm
+index b593ebb..6e1fa36 100644
+--- a/chrome/common/mac/cfbundle_blocker.mm
++++ b/chrome/common/mac/cfbundle_blocker.mm
+@@ -15,6 +15,7 @@
+ #include "base/strings/sys_string_conversions.h"
+ #include "third_party/mach_override/mach_override.h"
+ 
++#ifndef MAC_APP_STORE
+ extern "C" {
+ 
+ // _CFBundleLoadExecutableAndReturnError is the internal implementation that
+@@ -33,6 +34,7 @@ Boolean _CFBundleLoadExecutableAndReturnError(CFBundleRef bundle,
+                                               CFErrorRef* error);
+ 
+ }  // extern "C"
++#endif //MAC_APP_STORE
+ 
+ namespace chrome {
+ namespace common {
+@@ -140,6 +142,7 @@ bool IsBundlePathBlocked(NSString* bundle_path) {
+   return false;
+ }
+ 
++#ifndef MAC_APP_STORE
+ typedef Boolean (*_CFBundleLoadExecutableAndReturnError_Type)(CFBundleRef,
+                                                               Boolean,
+                                                               CFErrorRef*);
+@@ -148,10 +151,12 @@ typedef Boolean (*_CFBundleLoadExecutableAndReturnError_Type)(CFBundleRef,
+ // _CFBundleLoadExecutableAndReturnError.
+ _CFBundleLoadExecutableAndReturnError_Type
+     g_original_underscore_cfbundle_load_executable_and_return_error;
++#endif //MAC_APP_STORE
+ 
+ Boolean ChromeCFBundleLoadExecutableAndReturnError(CFBundleRef bundle,
+                                                    Boolean force_global,
+                                                    CFErrorRef* error) {
++#ifndef MAC_APP_STORE
+   base::mac::ScopedNSAutoreleasePool autorelease_pool;
+ 
+   DCHECK(g_original_underscore_cfbundle_load_executable_and_return_error);
+@@ -220,11 +225,15 @@ Boolean ChromeCFBundleLoadExecutableAndReturnError(CFBundleRef bundle,
+   // Not blocked. Call through to the original implementation.
+   return g_original_underscore_cfbundle_load_executable_and_return_error(
+       bundle, force_global, error);
++#else
++  return FALSE;
++#endif //MAC_APP_STORE
+ }
+ 
+ }  // namespace
+ 
+ void EnableCFBundleBlocker() {
++#ifndef MAC_APP_STORE
+   mach_error_t err = mach_override_ptr(
+       reinterpret_cast<void*>(_CFBundleLoadExecutableAndReturnError),
+       reinterpret_cast<void*>(ChromeCFBundleLoadExecutableAndReturnError),
+@@ -234,6 +243,7 @@ void EnableCFBundleBlocker() {
+     DLOG(WARNING) << "mach_override _CFBundleLoadExecutableAndReturnError: "
+                   << err;
+   }
++#endif //MAC_APP_STORE
+ }
+ 
+ namespace {
+
+diff --git a/chrome/browser/mac/dock.mm b/chrome/browser/mac/dock.mm
+index 03d1440..8533673 100644
+--- a/chrome/browser/mac/dock.mm
++++ b/chrome/browser/mac/dock.mm
+@@ -17,6 +17,7 @@
+ #include "base/mac/scoped_nsautorelease_pool.h"
+ #include "base/strings/sys_string_conversions.h"
+ 
++#ifndef MAC_APP_STORE
+ extern "C" {
+ 
+ // Undocumented private internal CFURL functions. The Dock uses these to
+@@ -36,6 +37,7 @@ CFURLRef _CFURLCreateFromPropertyListRepresentation(
+     CFAllocatorRef allocator, CFPropertyListRef property_list_representation);
+ 
+ }  // extern "C"
++#endif //MAC_APP_STORE
+ 
+ namespace dock {
+ namespace {
+@@ -43,6 +45,7 @@ namespace {
+ NSString* const kDockTileDataKey = @"tile-data";
+ NSString* const kDockFileDataKey = @"file-data";
+ 
++#ifndef MAC_APP_STORE
+ // A wrapper around _CFURLCopyPropertyListRepresentation that operates on
+ // Foundation data types and returns an autoreleased NSDictionary.
+ NSDictionary* NSURLCopyDictionary(NSURL* url) {
+@@ -76,6 +79,10 @@ NSURL* NSURLCreateFromDictionary(NSDictionary* dictionary) {
+   NSMakeCollectable(url_cf.release());
+   return [url autorelease];
+ }
++#else
++NSString* const kDockCFURLStringKey = @"_CFURLString";
++NSString* const kDockCFURLStringTypeKey = @"_CFURLStringType";
++#endif //MAC_APP_STORE
+ 
+ // Returns an array parallel to |persistent_apps| containing only the
+ // pathnames of the Dock tiles contained therein. Returns nil on failure, such
+@@ -105,6 +112,7 @@ NSMutableArray* PersistentAppPaths(NSArray* persistent_apps) {
+       continue;
+     }
+ 
++#ifndef MAC_APP_STORE
+     NSURL* url = NSURLCreateFromDictionary(file_data);
+     if (!url) {
+       LOG(ERROR) << "no URL";
+@@ -117,6 +125,23 @@ NSMutableArray* PersistentAppPaths(NSArray* persistent_apps) {
+     }
+ 
+     NSString* path = [url path];
++#else
++    NSNumber* type = [file_data objectForKey:kDockCFURLStringTypeKey];
++    if (![type isKindOfClass:[NSNumber class]]) {
++      LOG(ERROR) << "type not NSNumber";
++      return nil;
++    }
++    if ([type intValue] != 0) {
++      LOG(ERROR) << "type not 0";
++      return nil;
++    }
++    NSString* path = [file_data objectForKey:kDockCFURLStringKey];
++    if (![path isKindOfClass:[NSString class]]) {
++      LOG(ERROR) << "path not NSString";
++      return nil;
++    }
++#endif //MAC_APP_STORE
++    
+     [app_paths addObject:path];
+   }
+ 
+@@ -187,6 +212,17 @@ AddIconStatus AddIcon(NSString* installed_path, NSString* dmg_app_path) {
+     return IconAddFailure;
+   }
+ 
++#ifdef MAC_APP_STORE
++  // Directories in the Dock's plist are given with trailing slashes. Since
++  // installed_path and dmg_app_path both refer to application bundles,
++  // they're directories and will show up with trailing slashes. This is an
++  // artifact of the Dock's internal use of CFURL. Look for paths that match,
++  // and when adding an item to the Dock's plist, keep it in the form that the
++  // Dock likes.
++  NSString* installed_path_dock = [installed_path stringByAppendingString:@"/"];
++  NSString* dmg_app_path_dock = [dmg_app_path stringByAppendingString:@"/"];
++#endif //MAC_APP_STORE
++
+   NSUInteger already_installed_app_index = NSNotFound;
+   NSUInteger app_index = NSNotFound;
+   for (NSUInteger index = 0; index < [persistent_apps count]; ++index) {
+@@ -299,6 +335,7 @@ AddIconStatus AddIcon(NSString* installed_path, NSString* dmg_app_path) {
+     }
+ 
+     // Set up the new Dock tile.
++#ifndef MAC_APP_STORE
+     NSURL* url = [NSURL fileURLWithPath:installed_path isDirectory:YES];
+     NSDictionary* url_dict = NSURLCopyDictionary(url);
+     if (!url_dict) {
+@@ -309,6 +346,18 @@ AddIconStatus AddIcon(NSString* installed_path, NSString* dmg_app_path) {
+     NSDictionary* new_tile_data =
+         [NSDictionary dictionaryWithObject:url_dict
+                                     forKey:kDockFileDataKey];
++#else
++    NSDictionary* new_tile_file_data =
++    [NSDictionary dictionaryWithObjectsAndKeys:
++      installed_path_dock, kDockCFURLStringKey,
++      [NSNumber numberWithInt:0], kDockCFURLStringTypeKey,
++      nil];
++
++    NSDictionary* new_tile_data =
++        [NSDictionary dictionaryWithObject:new_tile_file_data
++                                    forKey:kDockFileDataKey];
++#endif //MAC_APP_STORE
++
+     NSDictionary* new_tile =
+         [NSDictionary dictionaryWithObject:new_tile_data
+                                     forKey:kDockTileDataKey];
+
+diff --git a/content/common/sandbox_mac.mm b/content/common/sandbox_mac.mm
+index 590aa85..3197bf1 100644
+--- a/content/common/sandbox_mac.mm
++++ b/content/common/sandbox_mac.mm
+@@ -40,10 +40,12 @@ extern "C" {
+ #include "ui/base/layout.h"
+ #include "ui/gl/gl_surface.h"
+ 
++#ifndef MAC_APP_STORE
+ extern "C" {
+ void CGSSetDenyWindowServerConnections(bool);
+ void CGSShutdownServerConnections();
+ };
++#endif //MAC_APP_STORE
+ 
+ namespace content {
+ namespace {
+@@ -338,6 +340,7 @@ void Sandbox::SandboxWarmup(int sandbox_type) {
+ 
+   if (sandbox_type == SANDBOX_TYPE_RENDERER &&
+       base::mac::IsOSMountainLionOrLater()) {
++#ifndef MAC_APP_STORE
+     // Now disconnect from WindowServer, after all objects have been warmed up.
+     // Shutting down the connection requires connecting to WindowServer,
+     // so do this before actually engaging the sandbox. This is only done on
+@@ -346,6 +349,7 @@ void Sandbox::SandboxWarmup(int sandbox_type) {
+     // be printed to the system logger on certain OS versions.
+     CGSSetDenyWindowServerConnections(true);
+     CGSShutdownServerConnections();
++#endif //MAC_APP_STORE
+   }
+ }
