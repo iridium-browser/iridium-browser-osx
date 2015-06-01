@@ -32,11 +32,11 @@ set -eu
 # Changes section
 CHROMIUM_GIT="https://chromium.googlesource.com/chromium/src.git"
 CHROMIUM_SRC_DIR="src"
-# This is Chromium for 41.0.2272.118
+# This is Chromium for 43.0.2357.85
 # You can lookup commit hashes for versions at https://omahaproxy.appspot.com/
-CHROMIUM_VERSION="6e0744b15b09421eac6634fb3fb7fe0a03427d56"
+CHROMIUM_VERSION="51ffcf446d751d1ded9d19b708b8a20a9729a9c4"
 
-IRIDIUM_PATCH_FILE="ir-41.2.x-41.0.2272.118.diff"
+IRIDIUM_PATCH_FILE="ir-43.1.x-43.0.2357.85.diff"
 
 # This is a patch file of changes which were not yet synced with main Iririum repo
 IRIDIUM_UNSYNCED_PATCH_FILE="ir-unsynced.diff"
@@ -196,7 +196,7 @@ popd
 pushd .
 cp -f "patches/$IRIDIUM_PATCH_FILE" "../$CHROMIUM_SRC_DIR/"
 cd "../$CHROMIUM_SRC_DIR"
-patch -l -p3 < "$IRIDIUM_PATCH_FILE"
+patch -l -p1 < "$IRIDIUM_PATCH_FILE"
 rm $IRIDIUM_PATCH_FILE
 # go back to script dir
 popd

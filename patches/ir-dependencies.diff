@@ -86,25 +86,23 @@ index 63fd8f8..e1cf0af 100644
 
  } // namespace blink
 
-diff --git a/third_party/WebKit/Source/core/rendering/RenderThemeChromiumMac.mm b/third_party/WebKit/Source/core/rendering/RenderThemeChromiumMac.mm
-index 9eb17d4..7c912d6 100644
---- a/third_party/WebKit/Source/core/rendering/RenderThemeChromiumMac.mm
-+++ b/third_party/WebKit/Source/core/rendering/RenderThemeChromiumMac.mm
-@@ -141,9 +141,13 @@ const double progressAnimationNumFrames = 256;
-
+diff --git a/third_party/WebKit/Source/core/layout/LayoutThemeMac.mm b/third_party/WebKit/Source/core/layout/LayoutThemeMac.mm
+index ccc9c49..bd175af 100644
+--- a/third_party/WebKit/Source/core/layout/LayoutThemeMac.mm
++++ b/third_party/WebKit/Source/core/layout/LayoutThemeMac.mm
+@@ -143,9 +143,11 @@ const double progressAnimationNumFrames = 256;
+ 
  // Forward declare Mac SPIs.
  extern "C" {
 +#ifndef MAC_APP_STORE
  void _NSDrawCarbonThemeBezel(NSRect frame, BOOL enabled, BOOL flipped);
  // Request for public API: rdar://13787640
  void _NSDrawCarbonThemeListBox(NSRect frame, BOOL enabled, BOOL flipped, BOOL always_yes);
-+#else
-+
 +#endif
  }
-
+ 
  namespace blink {
-@@ -699,9 +703,12 @@ bool RenderThemeChromiumMac::paintTextField(RenderObject* o, const PaintInfo& pa
+@@ -700,7 +702,9 @@ bool LayoutThemeMac::paintTextField(LayoutObject* o, const PaintInfo& paintInfo,
      // background. We need WebCore to paint styled backgrounds, so we'll use
      // this AppKit SPI function instead.
      if (!useNSTextFieldCell) {
@@ -113,12 +111,9 @@ index 9eb17d4..7c912d6 100644
 +#endif //MAC_APP_STORE
          return false;
      }
-+
  #endif
-
-     NSTextFieldCell *textField = this->textField();
-@@ -780,7 +787,9 @@ bool RenderThemeChromiumMac::paintCapsLockIndicator(RenderObject*, const PaintIn
- bool RenderThemeChromiumMac::paintTextArea(RenderObject* o, const PaintInfo& paintInfo, const IntRect& r)
+@@ -781,7 +785,9 @@ bool LayoutThemeMac::paintCapsLockIndicator(LayoutObject*, const PaintInfo& pain
+ bool LayoutThemeMac::paintTextArea(LayoutObject* o, const PaintInfo& paintInfo, const IntRect& r)
  {
      LocalCurrentGraphicsContext localContext(paintInfo.context, r);
 +#ifndef MAC_APP_STORE

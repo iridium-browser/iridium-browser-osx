@@ -11,3 +11,50 @@ index 7ec5ae2..f7cf2f8 100644
            'GCC_VERSION': '4.2',
            'GCC_WARN_ABOUT_MISSING_NEWLINE': 'YES',  # -Wnewline-eof
            'USE_HEADERMAP': 'NO',
+
+diff --git a/net/url_request/url_request.cc b/net/url_request/url_request.cc
+index 1f0c147..a1dc67b 100644
+--- a/net/url_request/url_request.cc
++++ b/net/url_request/url_request.cc
+@@ -568,7 +568,7 @@ URLRequest::URLRequest(const GURL& url,
+                        xred, url.possibly_invalid_spec().c_str(), xreset);
+                if (ui_alert_trace_func != NULL)
+                        (*ui_alert_trace_func)(url);
+-               url_chain_ = {1, url.strip_trk()};
++    url_chain_ = std::vector<GURL>(1, url.strip_trk());
+        } else {
+                fprintf(stderr, "%s***%s URLRequest(%s)%s\n",
+                        xfruit, xdark, url.possibly_invalid_spec().c_str(), xreset);
+diff --git a/chrome/app/chrome_main.cc b/chrome/app/chrome_main.cc
+index 95160a9..80de718 100644
+--- a/chrome/app/chrome_main.cc
++++ b/chrome/app/chrome_main.cc
+@@ -27,6 +27,15 @@ int ChromeMain(int argc, const char** argv);
+ }
+ #endif
+ 
++#if defined(OS_MACOSX)
++void print_trace_alert(const GURL &url)
++{
++  std::string s = "alert(\"Attempt at loading traced URL:\\n " +
++                  url.spec() + "\");";
++  printf("%s\n", s.c_str());
++}
++#endif // defined(OS_MACOSX)
++
+ #if defined(OS_WIN)
+ DLLEXPORT int __cdecl ChromeMain(HINSTANCE instance,
+                                  sandbox::SandboxInterfaceInfo* sandbox_info) {
+@@ -65,7 +74,12 @@ int ChromeMain(int argc, const char** argv) {
+   params.argv = argv;
+ #endif
+ 
++#ifndef OS_MACOSX
+   net::ui_alert_trace_func = &chrome::ui_show_trace_alert;
++#else
++  net::ui_alert_trace_func = &print_trace_alert; //linking fails when using ui_show_trace_alert on Mac OS X
++#endif // OS_MACOSX
++  
+   int rv = content::ContentMain(params);
+ 
+ #if defined(OS_WIN)
