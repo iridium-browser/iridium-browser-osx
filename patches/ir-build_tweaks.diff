@@ -38,7 +38,7 @@ index 95160a9..80de718 100644
 +{
 +  std::string s = "alert(\"Attempt at loading traced URL:\\n " +
 +                  url.spec() + "\");";
-+  printf("%s\n", s.c_str());
++  fprintf(stderr, "%s\n", s.c_str());
 +}
 +#endif // defined(OS_MACOSX)
 +
