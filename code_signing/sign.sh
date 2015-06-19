@@ -70,9 +70,8 @@ codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERS
 codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Libraries/exif.so"
 codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Libraries/ffmpegsumo.so"
 codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Resources/app_mode_loader.app"
-codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Resources/crash_report_sender.app"
-codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Resources/crash_inspector"
-codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Internet Plug-Ins/PDF.plugin"
+codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Helpers/crashpad_handler"
+codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Internet Plug-Ins/nacl_irt_x86_64.nexe"
 codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/$OUTPUT_FILE_NAME Framework"
 
 codesign -s $IDENTITY -i "$BUNDLE_ID" "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app"
@@ -87,9 +86,8 @@ spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSI
 spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Libraries/exif.so"
 spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Libraries/ffmpegsumo.so"
 spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Resources/app_mode_loader.app"
-spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Resources/crash_report_sender.app"
-spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Resources/crash_inspector"
-spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Internet Plug-Ins/PDF.plugin"
+spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Helpers/crashpad_handler"
+spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/Internet Plug-Ins/nacl_irt_x86_64.nexe"
 spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/$OUTPUT_FILE_NAME Framework.framework/$OUTPUT_FILE_NAME Framework"
 spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app"
 
