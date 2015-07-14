@@ -36,7 +36,7 @@ CHROMIUM_SRC_DIR="src"
 # You can lookup commit hashes for versions at https://omahaproxy.appspot.com/
 CHROMIUM_VERSION="2d29e0c5afda590f32097f038157799d3015dd99"
 
-IRIDIUM_PATCH_FILE="ir-43.4.x-43.0.2357.125.diff"
+IRIDIUM_PATCH_FILE="ir-43.5.x-43.0.2357.125.diff"
 
 # This is a patch file of changes which were not yet synced with main Iririum repo
 IRIDIUM_UNSYNCED_PATCH_FILE="ir-unsynced.diff"
