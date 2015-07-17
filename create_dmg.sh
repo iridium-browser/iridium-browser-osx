@@ -39,13 +39,20 @@ popd() { builtin popd > /dev/null; }
 if [ -z "$2" ]
 then
 	echo
-	echo "create_dmg.sh usage: create_dmg.sh app_file_path output_dir"
+	echo "create_dmg.sh usage: create_dmg.sh app_file_path output_dir <dmg_name>"
 	echo
 	exit 1
 else
 	echo
 	echo "Iridium dmg creation script"
 	echo "Creating dmg in directory $2"
+fi
+
+if [[ $# == 3 ]]
+then
+	echo
+	echo "Set $3 as dmg name"
+	DMG_NAME=$3
 fi
 
 pushd .
