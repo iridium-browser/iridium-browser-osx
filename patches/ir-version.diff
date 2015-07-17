@@ -8,5 +8,5 @@ index 524f08e..dcc97be 100644
 -BUILD=0
 -PATCH=0
 +MINOR=8
-+BUILD=0
++BUILD=1
 +PATCH=0
