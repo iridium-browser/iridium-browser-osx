@@ -35,7 +35,6 @@ CHROMIUM_SRC_DIR="src"
 # Name of built application bundle, can vary depending on
 # what is provided in patches
 IRIDIUM_APP_BUNDLE_NAME="Iridium.app"
-
 IRIDIUM_EXTRA_APP_BUNDLE_NAME="Iridium-extra.app"
 
 # Output directory for finished builds. Has subdirs < mas, iad, nosign, tmp >
@@ -65,6 +64,8 @@ IAD_EXTRA_SUBDIR="iad-extra"
 NOSIGN_SUBDIR="nosign"
 TMP_SUBDIR="tmp"
 
+IRIDIUM_APP_NAME="Iridium"
+IRIDIUM_EXTRA_APP_NAME="Iridium-extra"
 
 # redefine pushd and popd in order not to show output in stdout
 pushd() { builtin pushd "$@" > /dev/null; }
@@ -136,72 +137,39 @@ prepare_for_iad() {
 	echo "Preparing app as Identified Apple Developer for outside of MAS"
 	pushd .
 
-	mkdir -p "$OUT_DIR/$IAD_SUBDIR/$TMP_SUBDIR"
+	ARG1=${1:-}
+	ARG2=${2:-}
+	ARG3=${3:-}
+	ARG4=${4:-}
+
+	mkdir -p "$OUT_DIR/$ARG1/$TMP_SUBDIR"
 
 	# Sign Application bundle
-	cp "$SIGN_SCRIPTS_PATH/$IAD_SIGN_SCRIPT" "$OUT_DIR/$IAD_SUBDIR/$TMP_SUBDIR/"
-	cp "$SIGN_SCRIPTS_PATH/$FIND_IDENTITY_SCRIPT" "$OUT_DIR/$IAD_SUBDIR/$TMP_SUBDIR/"
-	cp -af "../$CHROMIUM_SRC_DIR/out/Release/$IRIDIUM_APP_BUNDLE_NAME" "$OUT_DIR/$IAD_SUBDIR/$TMP_SUBDIR/"
-	cd "$OUT_DIR/$IAD_SUBDIR/$TMP_SUBDIR"
+	cp "$SIGN_SCRIPTS_PATH/$IAD_SIGN_SCRIPT" "$OUT_DIR/$ARG1/$TMP_SUBDIR/"
+	cp "$SIGN_SCRIPTS_PATH/$FIND_IDENTITY_SCRIPT" "$OUT_DIR/$ARG1/$TMP_SUBDIR/"
+	cp -af "../$CHROMIUM_SRC_DIR/out/Release/$IRIDIUM_APP_BUNDLE_NAME" "$OUT_DIR/$ARG1/$TMP_SUBDIR/$ARG2"
+	cd "$OUT_DIR/$ARG1/$TMP_SUBDIR"
 
 	SIGNING_IDENTITY=`./$FIND_IDENTITY_SCRIPT iad`
 
-	ARG1=${1:-}
-	local l_iad_SIGNING_IDENTITY=$ARG1
+	local l_iad_SIGNING_IDENTITY=$ARG4
 
 	if [[ -z "${l_iad_SIGNING_IDENTITY}" ]]; then
 		echo "No signing parameters were given. Searching..."
 		l_iad_SIGNING_IDENTITY=`./$FIND_IDENTITY_SCRIPT iad`
 	fi
 
-	"./$IAD_SIGN_SCRIPT" $l_iad_SIGNING_IDENTITY "de.iridiumbrowser" $BUNDLE_VERSION "./$IRIDIUM_APP_BUNDLE_NAME" "Iridium" "../"
+	"./$IAD_SIGN_SCRIPT" $l_iad_SIGNING_IDENTITY "de.iridiumbrowser" $BUNDLE_VERSION "./$ARG2" "$ARG3" "../"
 	cd ..
 	rm -rf $TMP_SUBDIR
 	popd
 
 	# Create dmg
 	pushd .
-	./create_dmg.sh "$OUT_DIR/$IAD_SUBDIR/Iridium.app" "$OUT_DIR/$IAD_SUBDIR"
+	./create_dmg.sh "$OUT_DIR/$ARG1/$ARG2" "$OUT_DIR/$ARG1"
 	popd
 
-	echo "You should be able to find Iridium.app and Iridium.dmg in $OUT_DIR/$IAD_SUBDIR"
-}
-
-
-prepare_for_iad_extra() {
-	echo "Preparing app as Identified Apple Developer for outside of MAS"
-	pushd .
-
-	mkdir -p "$OUT_DIR/$IAD_EXTRA_SUBDIR/$TMP_SUBDIR"
-
-	# Sign Application bundle
-	cp "$SIGN_SCRIPTS_PATH/$IAD_SIGN_SCRIPT" "$OUT_DIR/$IAD_EXTRA_SUBDIR/$TMP_SUBDIR/"
-	cp "$SIGN_SCRIPTS_PATH/$FIND_IDENTITY_SCRIPT" "$OUT_DIR/$IAD_EXTRA_SUBDIR/$TMP_SUBDIR/"
-	cp -af "../$CHROMIUM_SRC_DIR/out/Release/$IRIDIUM_APP_BUNDLE_NAME" "$OUT_DIR/$IAD_EXTRA_SUBDIR/$TMP_SUBDIR/$IRIDIUM_EXTRA_APP_BUNDLE_NAME"
-	cp "../$CHROMIUM_SRC_DIR/out/Release/ffmpegsumo.so" "$OUT_DIR/$IAD_EXTRA_SUBDIR/$TMP_SUBDIR/$IRIDIUM_EXTRA_APP_BUNDLE_NAME/Contents/Versions/$BUNDLE_VERSION/Iridium Framework.framework/Libraries/ffmpegsumo.so"
-	cd "$OUT_DIR/$IAD_EXTRA_SUBDIR/$TMP_SUBDIR"
-
-	SIGNING_IDENTITY=`./$FIND_IDENTITY_SCRIPT iad`
-
-	ARG1=${1:-}
-	local l_iad_SIGNING_IDENTITY=$ARG1
-
-	if [[ -z "${l_iad_SIGNING_IDENTITY}" ]]; then
-		echo "No signing parameters were given. Searching..."
-		l_iad_SIGNING_IDENTITY=`./$FIND_IDENTITY_SCRIPT iad`
-	fi
-
-	"./$IAD_SIGN_SCRIPT" $l_iad_SIGNING_IDENTITY "de.iridiumbrowser" $BUNDLE_VERSION "./$IRIDIUM_EXTRA_APP_BUNDLE_NAME" "Iridium-extra" "../"
-	cd ..
-	rm -rf $TMP_SUBDIR
-	popd
-
-	# Create dmg
-	pushd .
-	./create_dmg.sh "$OUT_DIR/$IAD_EXTRA_SUBDIR/Iridium-extra.app" "$OUT_DIR/$IAD_EXTRA_SUBDIR" "Iridium-extra"
-	popd
-
-	echo "You should be able to find Iridium-extra.app and Iridium-extra.dmg in $OUT_DIR/$IAD_EXTRA_SUBDIR"
+	echo "You should be able to find $ARG2 and $ARG3.dmg in $OUT_DIR/$ARG1"
 }
 
 
@@ -310,7 +278,8 @@ fi
 if [[ -z $NO_PATCHING ]]; then
 	echo "Run iridium-osx-patch to prepare sources"
 
-	export GYP_DEFINES="proprietary_codecs=1"
+	export GYP_DEFINES="proprietary_codecs=1 ffmpeg_branding=Chromium"
+	echo "GYP_DEFINES = $GYP_DEFINES"
 
 	echo "Starting at `date`"
 	date1=$(date +"%s")
@@ -403,9 +372,9 @@ if [[ -z $NO_PACKAGING ]]; then
 			;;
 		"iad")
 			if [ ! -z "${IAD_SIGNING_IDENTITY:-}" ]; then
-				prepare_for_iad $IAD_SIGNING_IDENTITY
+				prepare_for_iad $IAD_SUBDIR $IRIDIUM_APP_BUNDLE_NAME $IRIDIUM_APP_NAME $IAD_SIGNING_IDENTITY
 			else
-				prepare_for_iad
+				prepare_for_iad $IAD_SUBDIR $IRIDIUM_APP_BUNDLE_NAME $IRIDIUM_APP_NAME
 			fi
 			;;
 		"nosign")
@@ -429,12 +398,18 @@ if [[ ! -z $EXTRA_CODECS ]]; then
 	
 	pushd .
 	cd "../$CHROMIUM_SRC_DIR"
-	export GYP_DEFINES="ffmpeg_branding=Chrome"
+	export GYP_DEFINES="proprietary_codecs=1 ffmpeg_branding=Chrome"
+	echo "GYP_DEFINES = $GYP_DEFINES"
 	python build/gyp_chromium third_party/ffmpeg/ffmpeg.gyp
-	
-	ninja -C out/Release ffmpegsumo
+	gclient runhooks
+	ninja -C out/Release
 	
 	popd
 
-	prepare_for_iad_extra
+	if [ ! -z "${IAD_SIGNING_IDENTITY:-}" ]; then
+		prepare_for_iad $IAD_EXTRA_SUBDIR $IRIDIUM_EXTRA_APP_BUNDLE_NAME $IRIDIUM_EXTRA_APP_NAME $IAD_SIGNING_IDENTITY
+	else
+		prepare_for_iad $IAD_EXTRA_SUBDIR $IRIDIUM_EXTRA_APP_BUNDLE_NAME $IRIDIUM_EXTRA_APP_NAME
+	fi
+
 fi

@@ -32,11 +32,11 @@ set -eu
 # Changes section
 CHROMIUM_GIT="https://chromium.googlesource.com/chromium/src.git"
 CHROMIUM_SRC_DIR="src"
-# This is Chromium for 43.0.2357.132
+# This is Chromium for 44.0.2403.125
 # You can lookup commit hashes for versions at https://omahaproxy.appspot.com/
-CHROMIUM_VERSION="20dadcd155faa98cbac3681feb689ec8eb807a01"
+CHROMIUM_VERSION="62769abba637a751ff0a7f904cc3658c5e3e741c"
 
-IRIDIUM_PATCH_FILE="ir-43.8.x-43.0.2357.132.diff"
+IRIDIUM_PATCH_FILE="ir-44.0.x-44.0.2403.125.diff"
 
 # This is a patch file of changes which were not yet synced with main Iririum repo
 IRIDIUM_UNSYNCED_PATCH_FILE="ir-unsynced.diff"

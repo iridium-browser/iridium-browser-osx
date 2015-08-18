@@ -86,42 +86,6 @@ index 63fd8f8..e1cf0af 100644
 
  } // namespace blink
 
-diff --git a/third_party/WebKit/Source/core/layout/LayoutThemeMac.mm b/third_party/WebKit/Source/core/layout/LayoutThemeMac.mm
-index ccc9c49..bd175af 100644
---- a/third_party/WebKit/Source/core/layout/LayoutThemeMac.mm
-+++ b/third_party/WebKit/Source/core/layout/LayoutThemeMac.mm
-@@ -143,9 +143,11 @@ const double progressAnimationNumFrames = 256;
- 
- // Forward declare Mac SPIs.
- extern "C" {
-+#ifndef MAC_APP_STORE
- void _NSDrawCarbonThemeBezel(NSRect frame, BOOL enabled, BOOL flipped);
- // Request for public API: rdar://13787640
- void _NSDrawCarbonThemeListBox(NSRect frame, BOOL enabled, BOOL flipped, BOOL always_yes);
-+#endif
- }
- 
- namespace blink {
-@@ -700,7 +702,9 @@ bool LayoutThemeMac::paintTextField(LayoutObject* o, const PaintInfo& paintInfo,
-     // background. We need WebCore to paint styled backgrounds, so we'll use
-     // this AppKit SPI function instead.
-     if (!useNSTextFieldCell) {
-+#ifndef MAC_APP_STORE
-         _NSDrawCarbonThemeBezel(r, isEnabled(o) && !isReadOnlyControl(o), YES);
-+#endif //MAC_APP_STORE
-         return false;
-     }
- #endif
-@@ -781,7 +785,9 @@ bool LayoutThemeMac::paintCapsLockIndicator(LayoutObject*, const PaintInfo& pain
- bool LayoutThemeMac::paintTextArea(LayoutObject* o, const PaintInfo& paintInfo, const IntRect& r)
- {
-     LocalCurrentGraphicsContext localContext(paintInfo.context, r);
-+#ifndef MAC_APP_STORE
-     _NSDrawCarbonThemeListBox(r, isEnabled(o) && !isReadOnlyControl(o), YES, YES);
-+#endif
-     return false;
- }
-
 diff --git a/third_party/google_toolbox_for_mac/src/Foundation/GTMServiceManagement.c b/third_party/google_toolbox_for_mac/src/Foundation/GTMServiceManagement.c
 index efdc68e..cc44abd 100644
 --- a/third_party/google_toolbox_for_mac/src/Foundation/GTMServiceManagement.c
