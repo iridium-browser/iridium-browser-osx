@@ -71,7 +71,7 @@ codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERS
 codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/Iridium Framework.framework/Resources/app_mode_loader.app"
 codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/Iridium Framework.framework/Helpers/crashpad_handler"
 codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/Iridium Framework.framework/Internet Plug-Ins/nacl_irt_x86_64.nexe"
-codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/Iridium Framework.framework/$OUTPUT_FILE_NAME Framework"
+codesign -s $IDENTITY "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/Iridium Framework.framework/Iridium Framework"
 
 codesign -s $IDENTITY -i "$BUNDLE_ID" "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app"
 
@@ -86,6 +86,6 @@ spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSI
 spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/Iridium Framework.framework/Resources/app_mode_loader.app"
 spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/Iridium Framework.framework/Helpers/crashpad_handler"
 spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/Iridium Framework.framework/Internet Plug-Ins/nacl_irt_x86_64.nexe"
-spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/Iridium Framework.framework/$OUTPUT_FILE_NAME Framework"
+spctl --assess -t exec -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app/Contents/Versions/$VERSION/Iridium Framework.framework/Iridium Framework"
 spctl --assess -vvvv "$OUTPUT_DIR/$OUTPUT_FILE_NAME.app"
 
