@@ -166,7 +166,7 @@ prepare_for_iad() {
 
 	# Create dmg
 	pushd .
-	./create_dmg.sh "$OUT_DIR/$ARG1/$ARG2" "$OUT_DIR/$ARG1"
+	./create_dmg.sh "$OUT_DIR/$ARG1/$ARG2" "$OUT_DIR/$ARG1" "$ARG3"
 	popd
 
 	echo "You should be able to find $ARG2 and $ARG3.dmg in $OUT_DIR/$ARG1"
