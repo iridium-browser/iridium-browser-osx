@@ -226,16 +226,3 @@ index 590aa85..3197bf1 100644
 +#endif //MAC_APP_STORE
    }
  }
-
-diff --git a/components/signin/core/common/profile_management_switches.cc b/components/signin/core/common/profile_management_switches.cc
-index 6d58837..706fa51 100644
---- a/components/signin/core/common/profile_management_switches.cc
-+++ b/components/signin/core/common/profile_management_switches.cc
-@@ -41,6 +41,7 @@ State GetProcessState() {
-   bool not_consistent_identity =
-       base::CommandLine::ForCurrentProcess()->HasSwitch(
-           switches::kDisableAccountConsistency);
-+  not_new_avatar_menu = true;
-   int count_args = (is_new_avatar_menu ? 1 : 0) +
-       (is_new_profile_management ? 1 : 0) +
-       (is_consistent_identity ? 1 : 0) +
