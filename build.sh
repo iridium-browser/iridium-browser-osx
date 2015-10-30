@@ -37,14 +37,11 @@ CHROMIUM_SRC_DIR="src"
 IRIDIUM_APP_BUNDLE_NAME="Iridium.app"
 IRIDIUM_EXTRA_APP_BUNDLE_NAME="Iridium-extra.app"
 
-# Output directory for finished builds. Has subdirs < mas, iad, nosign, tmp >
+# Output directory for finished builds. Has subdirs < iad, nosign, tmp >
 OUT_DIR="out_ir"
 
 # Signing scripts path relative to parent dir of this script
 SIGN_SCRIPTS_PATH="code_signing"
-
-# Mac App Store signing script name
-MAS_SIGN_SCRIPT="mas_sign.sh"
 
 # Identified Apple Developer for outside of MAS signing script name
 IAD_SIGN_SCRIPT="sign.sh"
@@ -58,7 +55,6 @@ IMPORT_IDENTITIES_SCRIPT="import_identities.sh"
 
 # Do not modify anything after this comment unless you really know what you are doing.
 # ----------------------------------------------------------------------------
-MAS_SUBDIR="mas"
 IAD_SUBDIR="iad"
 IAD_EXTRA_SUBDIR="iad-extra"
 NOSIGN_SUBDIR="nosign"
@@ -73,9 +69,8 @@ popd() { builtin popd > /dev/null; }
 
 
 print_usage() {
-	echo "Usage: build [-m|--mode <mas/iad/nosign>] [-p|--no-patching] [-b|--no-building] [-s|--no-packaging] [-i|--identities-dir] [-e|--extra-codecs]";
+	echo "Usage: build [-m|--mode <iad/nosign>] [-p|--no-patching] [-b|--no-building] [-s|--no-packaging] [-i|--identities-dir] [-e|--extra-codecs]";
 	echo " -m|--mode:"
-	echo "     'mas' = Mac App Store build";
 	echo "     'iad' = Identified Apple Developer (outside Mac App Store) build";
 	echo "     'nosign' = no signature";
 	echo " -i|--identities-dir:"
@@ -83,53 +78,6 @@ print_usage() {
 	echo "     This should prompt for password to unlock keychain and for passphrases to import identities."
 	echo "     If you want to import a lot of identities using default passphrase and giving the password to unlock keychain"
 	echo "     you can use $SIGN_SCRIPTS_PATH/$IMPORT_IDENTITIES_SCRIPT directly."
-}
-
-
-prepare_for_mas() {
-	echo "Preparing app for Mac App Store"
-	pushd .
-
-	mkdir -p "$OUT_DIR/$MAS_SUBDIR/$TMP_SUBDIR"
-
-	cp "$SIGN_SCRIPTS_PATH/$MAS_SIGN_SCRIPT" "$OUT_DIR/$MAS_SUBDIR/$TMP_SUBDIR/"
-	cp "$SIGN_SCRIPTS_PATH/$FIND_IDENTITY_SCRIPT" "$OUT_DIR/$MAS_SUBDIR/$TMP_SUBDIR/"
-	if [ -e "$OUT_DIR/$MAS_SUBDIR/$TMP_SUBDIR/$IRIDIUM_APP_BUNDLE_NAME" ]; then
-		rm -rf "$OUT_DIR/$MAS_SUBDIR/$TMP_SUBDIR/$IRIDIUM_APP_BUNDLE_NAME"
-	fi
-	cp -af "../$CHROMIUM_SRC_DIR/out/Release/$IRIDIUM_APP_BUNDLE_NAME" "$OUT_DIR/$MAS_SUBDIR/$TMP_SUBDIR/"
-	cd "$OUT_DIR/$MAS_SUBDIR/$TMP_SUBDIR"
-
-	ARG1=${1:-}
-	ARG2=${2:-}
-	ARG3=${3:-}
-	ARG4=${4:-}
-	local l_mas_SIGNING_IDENTITY=$ARG1
-	local l_mas_PACKAGING_IDENTITY=$ARG2
-	local l_mas_TEAM_ID=$ARG3
-	local l_mas_COMPANY_NAME=$ARG4
-
-	if [[ -z "${l_mas_COMPANY_NAME}" ]]; then
-		echo "No signing parameters were given. Searching..."
-		l_mas_SIGNING_IDENTITY=`./$FIND_IDENTITY_SCRIPT mas_app`
-		l_mas_PACKAGING_IDENTITY=`./$FIND_IDENTITY_SCRIPT mas_package`
-		l_mas_TEAM_ID=`./$FIND_IDENTITY_SCRIPT mas_teamid`
-		l_mas_COMPANY_NAME=`./$FIND_IDENTITY_SCRIPT mas_company_name`
-	fi
-
-	# Add anchor to correctly check signature
-	echo "Adding anchor to correctly check signature ..."
-	sudo spctl --add --requirement "anchor apple generic and certificate leaf[subject.CN] = \"3rd Party Mac Developer Application: $l_mas_COMPANY_NAME ($l_mas_TEAM_ID)\"" --label "MAS"
-
-	# Finally sign
-	echo "Signing ..."
-	"./$MAS_SIGN_SCRIPT" $l_mas_SIGNING_IDENTITY $l_mas_PACKAGING_IDENTITY $l_mas_TEAM_ID "de.iridiumbrowser" $BUNDLE_VERSION "./$IRIDIUM_APP_BUNDLE_NAME" "Iridium" "../"
-	cd ..
-	rm -rf "$TMP_SUBDIR"
-
-	popd
-
-	echo "You should be able to find Iridium.app and Iridium.pkg in $OUT_DIR/$MAS_SUBDIR"
 }
 
 
@@ -202,7 +150,7 @@ done < build.config
 
 ARG1=${1:-}
 
-# Check for 'mas' parameter
+# Check for 'BUILD_MODE' parameter
 if [[ -z "${ARG1}" ]]; then
 	echo "No arguments were given or more than necessary argument were given."
 	print_usage
@@ -285,14 +233,6 @@ if [[ -z $NO_PATCHING ]]; then
 	date1=$(date +"%s")
 
 	case $BUILD_MODE in
-		"mas")
-			if [ ! -z "${TEAM_ID:-}" ]; then
-				./iridium-osx-patch.sh -m mas -t $TEAM_ID
-			else
-				TEAM_ID=`./$SIGN_SCRIPTS_PATH/$FIND_IDENTITY_SCRIPT mas_teamid`
-				./iridium-osx-patch.sh -m mas -t $TEAM_ID
-			fi
-			;;
 		"iad")
 			if [ ! -z "${TEAM_ID:-}" ]; then
 				./iridium-osx-patch.sh -m iad -t $TEAM_ID
@@ -363,13 +303,6 @@ if [[ -z $NO_PACKAGING ]]; then
 	date1=$(date +"%s")
 
 	case $BUILD_MODE in
-		"mas")
-			if [ ! -z "${MAS_SIGNING_IDENTITY:-}" ] && [ ! -z "${MAS_PACKAGE_IDENTITY:-}" ] && [ ! -z "${TEAM_ID:-}" ] && [ ! -z "${SIGNING_IDENTITY_COMPANY_NAME:-}" ]; then
-				prepare_for_mas $MAS_SIGNING_IDENTITY $MAS_PACKAGE_IDENTITY $TEAM_ID $SIGNING_IDENTITY_COMPANY_NAME
-			else
-				prepare_for_mas
-			fi
-			;;
 		"iad")
 			if [ ! -z "${IAD_SIGNING_IDENTITY:-}" ]; then
 				prepare_for_iad $IAD_SUBDIR $IRIDIUM_APP_BUNDLE_NAME $IRIDIUM_APP_NAME $IAD_SIGNING_IDENTITY

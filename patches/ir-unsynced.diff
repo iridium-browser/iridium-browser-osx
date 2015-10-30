@@ -1,228 +1,556 @@
-diff --git a/chrome/common/mac/cfbundle_blocker.h b/chrome/common/mac/cfbundle_blocker.h
-index 4222035..67be069 100644
---- a/chrome/common/mac/cfbundle_blocker.h
-+++ b/chrome/common/mac/cfbundle_blocker.h
-@@ -28,6 +28,8 @@ namespace mac {
+diff --git a/chrome/browser/ui/startup/startup_browser_creator_impl.cc b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
+index ecbc5dc..222e651 100644
+--- a/chrome/browser/ui/startup/startup_browser_creator_impl.cc
++++ b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
+@@ -968,7 +968,7 @@ void StartupBrowserCreatorImpl::InitializeWelcomeRunType(
+ #else  // OS_WIN
+   // Show the welcome page as the last tab only on first-run.
+   if (first_run::ShouldShowWelcomePage())
+-    welcome_run_type_ = WelcomeRunType::FIRST_RUN_LAST_TAB;
++    welcome_run_type_ = WelcomeRunType::NONE;
+ #endif  // !OS_WIN
+ }
+
+diff --git a/chrome/common/chrome_paths_mac.mm b/chrome/common/chrome_paths_mac.mm
+index 09cf13b..b71c017 100644
+--- a/chrome/common/chrome_paths_mac.mm
++++ b/chrome/common/chrome_paths_mac.mm
+@@ -64,7 +64,7 @@ char* ProductDirNameForBundle(NSBundle* chrome_bundle) {
+ #if defined(GOOGLE_CHROME_BUILD)
+     product_dir_name = "Google/Chrome";
+ #else
+-    product_dir_name = "Chromium";
++    product_dir_name = "Iridium";
+ #endif
+   }
+
+diff --git a/components/os_crypt/keychain_password_mac.mm b/components/os_crypt/keychain_password_mac.mm
+index 2ce10cd..76a67ff 100644
+--- a/components/os_crypt/keychain_password_mac.mm
++++ b/components/os_crypt/keychain_password_mac.mm
+@@ -55,8 +55,8 @@ std::string KeychainPassword::GetPassword() const {
+   const std::string service_name = "Chrome Safe Storage";
+   const std::string account_name = "Chrome";
+ #else
+-  const std::string service_name = "Chromium Safe Storage";
+-  const std::string account_name = "Chromium";
++  const std::string service_name = "Iridium Safe Storage";
++  const std::string account_name = "Iridium";
+ #endif
+
+   UInt32 password_length = 0;
+diff --git a/base/files/file_util.h b/base/files/file_util.h
+index ecc0d58..190fdd3 100644
+--- a/base/files/file_util.h
++++ b/base/files/file_util.h
+@@ -221,6 +221,11 @@ BASE_EXPORT bool GetTempDir(FilePath* path);
+ // Path service may also override DIR_HOME.
+ BASE_EXPORT FilePath GetHomeDir();
+
++// Get the caches directory. Basically is used only for OS X.
++//
++// At the moment returns 'false' on any other system than Mac OS.
++BASE_EXPORT bool GetCachesDir(FilePath* path);
++
+ // Creates a temporary file. The full path is placed in |path|, and the
+ // function returns true if was successful in creating the file. The file will
+ // be empty and all handles closed after this function returns.
+diff --git a/base/files/file_util_mac.mm b/base/files/file_util_mac.mm
+index a701bad..c6097f2 100644
+--- a/base/files/file_util_mac.mm
++++ b/base/files/file_util_mac.mm
+@@ -24,11 +24,41 @@ bool CopyFile(const FilePath& from_path, const FilePath& to_path) {
+ }
+ 
+ bool GetTempDir(base::FilePath* path) {
++#ifndef MAC_APP_STORE
+   NSString* tmp = NSTemporaryDirectory();
+   if (tmp == nil)
+     return false;
+   *path = base::mac::NSStringToFilePath(tmp);
+   return true;
++#else // MAC_APP_STORE
++  // Chromium uses temp directories to store a lot of UNIX socket files.
++  // In sandboxed applications socket files can only be used if they are
++  // inside of app container -
++  // https://stackoverflow.com/questions/17753222/sandboxd-deny-network-bind-error-message-when-binds-socket
++  // That is why it is easier to put the whole tmp dir on mac
++  // in app container rather than fix it all over the places.
++  base::FilePath cachesDir;
++  if (!GetCachesDir(&cachesDir)) {
++    return false;
++  }
++  cachesDir = cachesDir.Append("tmp");
++  if (!DirectoryExists(cachesDir)) {
++    if (mkdir(cachesDir.value().c_str(), 0700) != 0) {
++      return false;
++    }
++  }
++  *path = cachesDir;
++  return true;
++#endif
++}
++
++bool GetCachesDir(base::FilePath* path) {
++  NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
++  NSString *cachesDirectory = [paths objectAtIndex:0];
++  if (cachesDirectory == nil)
++    return false;
++  *path = base::mac::NSStringToFilePath(cachesDirectory);
++  return true;
+ }
+ 
+ FilePath GetHomeDir() {
+diff --git a/base/files/file_util_posix.cc b/base/files/file_util_posix.cc
+index a8c5d44..1916a6b 100644
+--- a/base/files/file_util_posix.cc
++++ b/base/files/file_util_posix.cc
+@@ -138,7 +138,7 @@ std::string TempFileName() {
+ #if defined(GOOGLE_CHROME_BUILD)
+   return std::string(".com.google.Chrome.XXXXXX");
+ #else
+-  return std::string(".org.chromium.Chromium.XXXXXX");
++  return std::string(".de.iridiumbrowser.XXXXXX");
+ #endif
+ }
+ 
+diff --git a/base/mac/foundation_util.mm b/base/mac/foundation_util.mm
+index 27d6e7c..36d7540 100644
+--- a/base/mac/foundation_util.mm
++++ b/base/mac/foundation_util.mm
+@@ -238,7 +238,7 @@ const char* BaseBundleID() {
+ #if defined(GOOGLE_CHROME_BUILD)
+   return "com.google.Chrome";
+ #else
+-  return "org.chromium.Chromium";
++  return "de.iridiumbrowser";
+ #endif
+ }
+ 
+diff --git a/base/memory/shared_memory_posix.cc b/base/memory/shared_memory_posix.cc
+index 2e66b34..6b2bacd 100644
+--- a/base/memory/shared_memory_posix.cc
++++ b/base/memory/shared_memory_posix.cc
+@@ -455,7 +455,7 @@ bool SharedMemory::FilePathForMemoryName(const std::string& mem_name,
+ #if defined(GOOGLE_CHROME_BUILD)
+   std::string name_base = std::string("com.google.Chrome");
+ #else
+-  std::string name_base = std::string("org.chromium.Chromium");
++  std::string name_base = std::string("de.iridiumbrowser");
+ #endif
+   *path = temp_dir.AppendASCII(name_base + ".shmem." + mem_name);
+   return true;
+diff --git a/build/chrome_settings.gypi b/build/chrome_settings.gypi
+index e9c7535..468f50b 100644
+--- a/build/chrome_settings.gypi
++++ b/build/chrome_settings.gypi
+@@ -18,10 +18,10 @@
+             # The policy .grd file also needs the bundle id.
+             'grit_defines': ['-D', 'mac_bundle_id=com.google.Chrome'],
+           }, {  # else: branding!="Chrome"
+-            'mac_bundle_id': 'org.chromium.Chromium',
++            'mac_bundle_id': 'de.iridiumbrowser',
+             'mac_creator': 'Cr24',
+             # The policy .grd file also needs the bundle id.
+-            'grit_defines': ['-D', 'mac_bundle_id=org.chromium.Chromium'],
++            'grit_defines': ['-D', 'mac_bundle_id=de.iridiumbrowser'],
+           }],  # branding
+         ],  # conditions
+       }],  # OS=="mac"
+diff --git a/chrome/browser/app_controller_mac.mm b/chrome/browser/app_controller_mac.mm
+index 137a060..9f5cd0b 100644
+--- a/chrome/browser/app_controller_mac.mm
++++ b/chrome/browser/app_controller_mac.mm
+@@ -160,7 +160,7 @@ CFStringRef BaseBundleID_CFString() {
+   return base::mac::NSToCFCast(base_bundle_id);
+ }
+ 
+-// This callback synchronizes preferences (under "org.chromium.Chromium" or
++// This callback synchronizes preferences (under "de.iridiumbrowser" or
+ // "com.google.Chrome"), in particular, writes them out to disk.
+ void PrefsSyncCallback() {
+   if (!CFPreferencesAppSynchronize(BaseBundleID_CFString()))
+diff --git a/chrome/browser/apps/app_shim/app_shim_host_manager_browsertest_mac.mm b/chrome/browser/apps/app_shim/app_shim_host_manager_browsertest_mac.mm
+index 2018c98..c87738b 100644
+--- a/chrome/browser/apps/app_shim/app_shim_host_manager_browsertest_mac.mm
++++ b/chrome/browser/apps/app_shim/app_shim_host_manager_browsertest_mac.mm
+@@ -242,7 +242,7 @@ bool AppShimHostManagerBrowserTestSocketFiles::SetUpUserDataDirectory() {
+   symlink_path_ = user_data_dir.Append(app_mode::kAppShimSocketSymlinkName);
+   base::FilePath temp_dir;
+   PathService::Get(base::DIR_TEMP, &temp_dir);
+-  EXPECT_TRUE(base::CreateSymbolicLink(temp_dir.Append("chrome-XXXXXX"),
++  EXPECT_TRUE(base::CreateSymbolicLink(temp_dir.Append("ir-XXXXXX"),
+                                        symlink_path_));
+ 
+   // Create an invalid RunningChromeVersion file.
+diff --git a/chrome/browser/apps/app_shim/app_shim_host_manager_mac.mm b/chrome/browser/apps/app_shim/app_shim_host_manager_mac.mm
+index c7f1f86..e4e548c 100644
+--- a/chrome/browser/apps/app_shim/app_shim_host_manager_mac.mm
++++ b/chrome/browser/apps/app_shim/app_shim_host_manager_mac.mm
+@@ -37,9 +37,9 @@ base::FilePath GetDirectoryInTmpTemplate(const base::FilePath& user_data_dir) {
+   base::FilePath temp_dir;
+   CHECK(PathService::Get(base::DIR_TEMP, &temp_dir));
+   // Check that it's shorter than the IPC socket length (104) minus the
+-  // intermediate folder ("/chrome-XXXXXX/") and kAppShimSocketShortName.
+-  DCHECK_GT(83u, temp_dir.value().length());
+-  return temp_dir.Append("chrome-XXXXXX");
++  // intermediate folder ("/ir-XXXXXX/") and kAppShimSocketShortName.
++  DCHECK_GT(87u, temp_dir.value().length());
++  return temp_dir.Append("ir-XXXXXX");
+ }
+ 
+ void DeleteSocketFiles(const base::FilePath& directory_in_tmp,
+diff --git a/chrome/browser/process_singleton_posix.cc b/chrome/browser/process_singleton_posix.cc
+index 25e9eca..b976fe7 100644
+--- a/chrome/browser/process_singleton_posix.cc
++++ b/chrome/browser/process_singleton_posix.cc
+@@ -742,7 +742,23 @@ ProcessSingleton::ProcessSingleton(
+     : notification_callback_(notification_callback),
+       current_pid_(base::GetCurrentProcId()),
+       watcher_(new LinuxWatcher(this)) {
++#if defined(OS_MACOSX)
++#ifndef MAC_APP_STORE
+   socket_path_ = user_data_dir.Append(chrome::kSingletonSocketFilename);
++#else // not def MAC_APP_STORE
++  // We do this to mitigate the problem with 104 chars max socket path in OSX
++  bool gotCachesDir = base::GetCachesDir(&socket_path_);
++  if (gotCachesDir) {
++    socket_path_ = socket_path_.Append(chrome::kSingletonSocketFilename);
++  } else {
++    socket_path_ = user_data_dir.Append(chrome::kSingletonSocketFilename);
++  }
++#endif // not def MAC_APP_STORE
++
++#else // defined(OS_MACOSX)
++  socket_path_ = user_data_dir.Append(chrome::kSingletonSocketFilename);
++#endif // defined(OS_MACOSX)
++
+   lock_path_ = user_data_dir.Append(chrome::kSingletonLockFilename);
+   cookie_path_ = user_data_dir.Append(chrome::kSingletonCookieFilename);
+ 
+@@ -983,14 +999,21 @@ bool ProcessSingleton::Create() {
+       << "Temp directory mode is not 700: " << std::oct << dir_mode;
+ 
+   // Setup the socket symlink and the two cookies.
++#ifndef MAC_APP_STORE
+   base::FilePath socket_target_path =
+       socket_dir_.path().Append(chrome::kSingletonSocketFilename);
++#endif
+   base::FilePath cookie(GenerateCookie());
+   base::FilePath remote_cookie_path =
+       socket_dir_.path().Append(chrome::kSingletonCookieFilename);
+   UnlinkPath(socket_path_);
+   UnlinkPath(cookie_path_);
+-  if (!SymlinkPath(socket_target_path, socket_path_) ||
++
++
++  if (
++#ifndef MAC_APP_STORE
++      !SymlinkPath(socket_target_path, socket_path_) ||
++#endif
+       !SymlinkPath(cookie, cookie_path_) ||
+       !SymlinkPath(cookie, remote_cookie_path)) {
+     // We've already locked things, so we can't have lost the startup race,
+@@ -1001,10 +1024,18 @@ bool ProcessSingleton::Create() {
+     return false;
+   }
+ 
++#ifndef MAC_APP_STORE
+   SetupSocket(socket_target_path.value(), &sock, &addr);
++#else
++  SetupSocket(socket_path_.value(), &sock, &addr);
++#endif
+ 
+   if (bind(sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
++#ifndef MAC_APP_STORE
+     PLOG(ERROR) << "Failed to bind() " << socket_target_path.value();
++#else
++    PLOG(ERROR) << "Failed to bind() " << socket_path_.value();
++#endif
+     CloseSocket(sock);
+     return false;
+   }
+diff --git a/chrome/common/chrome_constants.cc b/chrome/common/chrome_constants.cc
+index e41e836..9d3c102 100644
+--- a/chrome/common/chrome_constants.cc
++++ b/chrome/common/chrome_constants.cc
+@@ -176,7 +176,12 @@ const base::FilePath::CharType kSingletonCookieFilename[] =
+     FPL("SingletonCookie");
+ const base::FilePath::CharType kSingletonLockFilename[] = FPL("SingletonLock");
+ const base::FilePath::CharType kSingletonSocketFilename[] =
++#ifndef MAC_APP_STORE
+     FPL("SingletonSocket");
++#else
++    FPL("S");
++#endif
++
+ const base::FilePath::CharType kSupervisedUserSettingsFilename[] =
+     FPL("Managed Mode Settings");
+ const base::FilePath::CharType kThemePackFilename[] = FPL("Cached Theme.pak");
+diff --git a/chrome/common/mac/cfbundle_blocker_unittest.mm b/chrome/common/mac/cfbundle_blocker_unittest.mm
+index 2e23fe2..88fb1a0 100644
+--- a/chrome/common/mac/cfbundle_blocker_unittest.mm
++++ b/chrome/common/mac/cfbundle_blocker_unittest.mm
+@@ -26,7 +26,7 @@ TEST(CFBundleBlockerTest, IsBundleAllowed) {
+     { nil, nil, false },
+
+     // Block bundle IDs that aren't in the whitelist.
+-    { @"org.chromium.Chromium.evil", nil, false },
++    { @"de.iridiumbrowser.evil", nil, false },
+
+     // The AllowedBundle structure for Google Authetnicator BT doesn't
+     // require a version, so this should work equally well with any version
+diff --git a/content/browser/accessibility/browser_accessibility_cocoa.mm b/content/browser/accessibility/browser_accessibility_cocoa.mm
+index 7afcb30..5d51ba3 100644
+--- a/content/browser/accessibility/browser_accessibility_cocoa.mm
++++ b/content/browser/accessibility/browser_accessibility_cocoa.mm
+@@ -19,10 +19,12 @@
+ #include "content/public/common/content_client.h"
+ #import "ui/accessibility/platform/ax_platform_node_mac.h"
+ 
++#ifndef MAC_APP_STORE
+ // See http://openradar.appspot.com/9896491. This SPI has been tested on 10.5,
+ // 10.6, and 10.7. It allows accessibility clients to observe events posted on
+ // this object.
+ extern "C" void NSAccessibilityUnregisterUniqueIdForUIElement(id element);
++#endif
+ 
+ using ui::AXNodeData;
+ using content::AccessibilityMatchPredicate;
+@@ -422,7 +424,9 @@ bool InitializeAccessibilityTreeSearch(
+ 
+ - (void)detach {
+   if (browserAccessibility_) {
++#ifndef MAC_APP_STORE
+     NSAccessibilityUnregisterUniqueIdForUIElement(self);
++#endif
+     browserAccessibility_ = NULL;
+   }
+ }
+diff --git a/content/browser/device_monitor_mac.mm b/content/browser/device_monitor_mac.mm
+index c3c713c..75ef28a 100644
+--- a/content/browser/device_monitor_mac.mm
++++ b/content/browser/device_monitor_mac.mm
+@@ -4,7 +4,10 @@
+ 
+ #include "content/browser/device_monitor_mac.h"
+ 
++#ifndef MAC_APP_STORE
+ #import <QTKit/QTKit.h>
++#endif
++#import <Foundation/Foundation.h>
+ 
+ #include <set>
+ 
+@@ -150,6 +153,7 @@ class QTKitMonitorImpl : public DeviceMonitorMacImpl {
+ 
+ QTKitMonitorImpl::QTKitMonitorImpl(content::DeviceMonitorMac* monitor)
+     : DeviceMonitorMacImpl(monitor) {
++#ifndef MAC_APP_STORE
+   NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
+   device_arrival_ =
+       [nc addObserverForName:QTCaptureDeviceWasConnectedNotification
+@@ -169,27 +173,32 @@ QTKitMonitorImpl::QTKitMonitorImpl(content::DeviceMonitorMac* monitor)
+                        queue:nil
+                   usingBlock:^(NSNotification* notification) {
+                       OnAttributeChanged(notification);}];
++#endif
+ }
+ 
+ QTKitMonitorImpl::~QTKitMonitorImpl() {
++#ifndef MAC_APP_STORE
+   NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
+   [nc removeObserver:device_arrival_];
+   [nc removeObserver:device_removal_];
+   [nc removeObserver:device_change_];
++#endif
+ }
+ 
+ void QTKitMonitorImpl::OnAttributeChanged(
+     NSNotification* notification) {
++#ifndef MAC_APP_STORE
+   if ([[[notification userInfo]
+          objectForKey:QTCaptureDeviceChangedAttributeKey]
+       isEqualToString:QTCaptureDeviceSuspendedAttribute]) {
+     OnDeviceChanged();
+   }
++#endif
+ }
+ 
+ void QTKitMonitorImpl::OnDeviceChanged() {
+   std::vector<DeviceInfo> snapshot_devices;
+-
++#ifndef MAC_APP_STORE
+   NSArray* devices = [QTCaptureDevice inputDevices];
+   for (QTCaptureDevice* device in devices) {
+     DeviceInfo::DeviceType device_type = DeviceInfo::kUnknown;
+@@ -211,6 +220,7 @@ void QTKitMonitorImpl::OnDeviceChanged() {
+     snapshot_devices.push_back(
+         DeviceInfo([[device uniqueID] UTF8String], device_type));
+   }
++#endif
+   ConsolidateDevicesListAndNotify(snapshot_devices);
+ }
+ 
+@@ -555,7 +565,9 @@ void DeviceMonitorMac::NotifyDeviceChanged(
+     base::SystemMonitor::DeviceType type) {
+   DCHECK(thread_checker_.CalledOnValidThread());
+   // TODO(xians): Remove the global variable for SystemMonitor.
++#ifndef MAC_APP_STORE
+   base::SystemMonitor::Get()->ProcessDevicesChanged(type);
++#endif
+ }
+ 
+ }  // namespace content
+diff --git a/content/browser/mach_broker_mac.mm b/content/browser/mach_broker_mac.mm
+index 3efec6b..f3c4a85 100644
+--- a/content/browser/mach_broker_mac.mm
++++ b/content/browser/mach_broker_mac.mm
+@@ -253,7 +253,13 @@ std::string MachBroker::GetMachPortName() {
+ 
+   // In non-browser (child) processes, use the parent's pid.
+   const pid_t pid = is_child ? getppid() : getpid();
++#ifndef MAC_APP_STORE
+   return base::StringPrintf("%s.rohitfork.%d", base::mac::BaseBundleID(), pid);
++#else
++  // @APPLE_TEAM_ID@ should be set before building and should be the same as in signing script!!!
++  // We rely on it to be correct in order to setup mach based IPC in sandboxed environment.
++  return base::StringPrintf("@APPLE_TEAM_ID at .%s.rohitfork.%d", base::mac::BaseBundleID(), pid);
++#endif
+ }
+ 
+ void MachBroker::RegisterNotifications() {
+diff --git a/content/browser/renderer_host/render_widget_host_view_mac.mm b/content/browser/renderer_host/render_widget_host_view_mac.mm
+index 66f1c31..b822370 100644
+--- a/content/browser/renderer_host/render_widget_host_view_mac.mm
++++ b/content/browser/renderer_host/render_widget_host_view_mac.mm
+@@ -2806,9 +2806,12 @@ void RenderWidgetHostViewMac::OnDisplayMetricsChanged(
+ // Since this implementation doesn't have to wait any IPC calls, this doesn't
+ // make any key-typing jank. --hbono 7/23/09
  //
- // This mechanism does not prevent CFBundle (or NSBundle) objects from being
- // created, but it does block them from loading modules into the process.
-+// This function uses a private function not declared by <CoreFoundation/CoreFoundation.h>.
-+// If MAC_APP_STORE is defined, this function does nothing to avoid usage of private API.
- void EnableCFBundleBlocker();
- 
- // Returns true if |bundle_id| and |version| identify a bundle that is allowed
-diff --git a/chrome/common/mac/cfbundle_blocker.mm b/chrome/common/mac/cfbundle_blocker.mm
-index b593ebb..6e1fa36 100644
---- a/chrome/common/mac/cfbundle_blocker.mm
-+++ b/chrome/common/mac/cfbundle_blocker.mm
-@@ -15,6 +15,7 @@
- #include "base/strings/sys_string_conversions.h"
- #include "third_party/mach_override/mach_override.h"
- 
++
 +#ifndef MAC_APP_STORE
  extern "C" {
- 
- // _CFBundleLoadExecutableAndReturnError is the internal implementation that
-@@ -33,6 +34,7 @@ Boolean _CFBundleLoadExecutableAndReturnError(CFBundleRef bundle,
-                                               CFErrorRef* error);
- 
- }  // extern "C"
-+#endif //MAC_APP_STORE
- 
- namespace chrome {
- namespace common {
-@@ -140,6 +142,7 @@ bool IsBundlePathBlocked(NSString* bundle_path) {
-   return false;
+ extern NSString *NSTextInputReplacementRangeAttributeName;
  }
++#endif
  
+ - (NSArray *)validAttributesForMarkedText {
+   // This code is just copied from WebKit except renaming variables.
+@@ -2817,7 +2820,9 @@ extern NSString *NSTextInputReplacementRangeAttributeName;
+         NSUnderlineStyleAttributeName,
+         NSUnderlineColorAttributeName,
+         NSMarkedClauseSegmentAttributeName,
 +#ifndef MAC_APP_STORE
- typedef Boolean (*_CFBundleLoadExecutableAndReturnError_Type)(CFBundleRef,
-                                                               Boolean,
-                                                               CFErrorRef*);
-@@ -148,10 +151,12 @@ typedef Boolean (*_CFBundleLoadExecutableAndReturnError_Type)(CFBundleRef,
- // _CFBundleLoadExecutableAndReturnError.
- _CFBundleLoadExecutableAndReturnError_Type
-     g_original_underscore_cfbundle_load_executable_and_return_error;
-+#endif //MAC_APP_STORE
- 
- Boolean ChromeCFBundleLoadExecutableAndReturnError(CFBundleRef bundle,
-                                                    Boolean force_global,
-                                                    CFErrorRef* error) {
-+#ifndef MAC_APP_STORE
-   base::mac::ScopedNSAutoreleasePool autorelease_pool;
- 
-   DCHECK(g_original_underscore_cfbundle_load_executable_and_return_error);
-@@ -220,11 +225,15 @@ Boolean ChromeCFBundleLoadExecutableAndReturnError(CFBundleRef bundle,
-   // Not blocked. Call through to the original implementation.
-   return g_original_underscore_cfbundle_load_executable_and_return_error(
-       bundle, force_global, error);
-+#else
-+  return FALSE;
-+#endif //MAC_APP_STORE
- }
- 
- }  // namespace
- 
- void EnableCFBundleBlocker() {
-+#ifndef MAC_APP_STORE
-   mach_error_t err = mach_override_ptr(
-       reinterpret_cast<void*>(_CFBundleLoadExecutableAndReturnError),
-       reinterpret_cast<void*>(ChromeCFBundleLoadExecutableAndReturnError),
-@@ -234,6 +243,7 @@ void EnableCFBundleBlocker() {
-     DLOG(WARNING) << "mach_override _CFBundleLoadExecutableAndReturnError: "
-                   << err;
+         NSTextInputReplacementRangeAttributeName,
++#endif
+         nil]);
    }
-+#endif //MAC_APP_STORE
- }
- 
- namespace {
-
-diff --git a/chrome/browser/mac/dock.mm b/chrome/browser/mac/dock.mm
-index 03d1440..8533673 100644
---- a/chrome/browser/mac/dock.mm
-+++ b/chrome/browser/mac/dock.mm
-@@ -17,6 +17,7 @@
- #include "base/mac/scoped_nsautorelease_pool.h"
- #include "base/strings/sys_string_conversions.h"
- 
-+#ifndef MAC_APP_STORE
- extern "C" {
- 
- // Undocumented private internal CFURL functions. The Dock uses these to
-@@ -36,6 +37,7 @@ CFURLRef _CFURLCreateFromPropertyListRepresentation(
-     CFAllocatorRef allocator, CFPropertyListRef property_list_representation);
- 
- }  // extern "C"
-+#endif //MAC_APP_STORE
- 
- namespace dock {
- namespace {
-@@ -43,6 +45,7 @@ namespace {
- NSString* const kDockTileDataKey = @"tile-data";
- NSString* const kDockFileDataKey = @"file-data";
- 
-+#ifndef MAC_APP_STORE
- // A wrapper around _CFURLCopyPropertyListRepresentation that operates on
- // Foundation data types and returns an autoreleased NSDictionary.
- NSDictionary* NSURLCopyDictionary(NSURL* url) {
-@@ -76,6 +79,10 @@ NSURL* NSURLCreateFromDictionary(NSDictionary* dictionary) {
-   NSMakeCollectable(url_cf.release());
-   return [url autorelease];
- }
-+#else
-+NSString* const kDockCFURLStringKey = @"_CFURLString";
-+NSString* const kDockCFURLStringTypeKey = @"_CFURLStringType";
-+#endif //MAC_APP_STORE
- 
- // Returns an array parallel to |persistent_apps| containing only the
- // pathnames of the Dock tiles contained therein. Returns nil on failure, such
-@@ -105,6 +112,7 @@ NSMutableArray* PersistentAppPaths(NSArray* persistent_apps) {
-       continue;
-     }
- 
-+#ifndef MAC_APP_STORE
-     NSURL* url = NSURLCreateFromDictionary(file_data);
-     if (!url) {
-       LOG(ERROR) << "no URL";
-@@ -117,6 +125,23 @@ NSMutableArray* PersistentAppPaths(NSArray* persistent_apps) {
-     }
- 
-     NSString* path = [url path];
-+#else
-+    NSNumber* type = [file_data objectForKey:kDockCFURLStringTypeKey];
-+    if (![type isKindOfClass:[NSNumber class]]) {
-+      LOG(ERROR) << "type not NSNumber";
-+      return nil;
-+    }
-+    if ([type intValue] != 0) {
-+      LOG(ERROR) << "type not 0";
-+      return nil;
-+    }
-+    NSString* path = [file_data objectForKey:kDockCFURLStringKey];
-+    if (![path isKindOfClass:[NSString class]]) {
-+      LOG(ERROR) << "path not NSString";
-+      return nil;
-+    }
-+#endif //MAC_APP_STORE
-+    
-     [app_paths addObject:path];
-   }
- 
-@@ -187,6 +212,17 @@ AddIconStatus AddIcon(NSString* installed_path, NSString* dmg_app_path) {
-     return IconAddFailure;
-   }
- 
-+#ifdef MAC_APP_STORE
-+  // Directories in the Dock's plist are given with trailing slashes. Since
-+  // installed_path and dmg_app_path both refer to application bundles,
-+  // they're directories and will show up with trailing slashes. This is an
-+  // artifact of the Dock's internal use of CFURL. Look for paths that match,
-+  // and when adding an item to the Dock's plist, keep it in the form that the
-+  // Dock likes.
-+  NSString* installed_path_dock = [installed_path stringByAppendingString:@"/"];
-+  NSString* dmg_app_path_dock = [dmg_app_path stringByAppendingString:@"/"];
-+#endif //MAC_APP_STORE
-+
-   NSUInteger already_installed_app_index = NSNotFound;
-   NSUInteger app_index = NSNotFound;
-   for (NSUInteger index = 0; index < [persistent_apps count]; ++index) {
-@@ -299,6 +335,7 @@ AddIconStatus AddIcon(NSString* installed_path, NSString* dmg_app_path) {
-     }
- 
-     // Set up the new Dock tile.
-+#ifndef MAC_APP_STORE
-     NSURL* url = [NSURL fileURLWithPath:installed_path isDirectory:YES];
-     NSDictionary* url_dict = NSURLCopyDictionary(url);
-     if (!url_dict) {
-@@ -309,6 +346,18 @@ AddIconStatus AddIcon(NSString* installed_path, NSString* dmg_app_path) {
-     NSDictionary* new_tile_data =
-         [NSDictionary dictionaryWithObject:url_dict
-                                     forKey:kDockFileDataKey];
-+#else
-+    NSDictionary* new_tile_file_data =
-+    [NSDictionary dictionaryWithObjectsAndKeys:
-+      installed_path_dock, kDockCFURLStringKey,
-+      [NSNumber numberWithInt:0], kDockCFURLStringTypeKey,
-+      nil];
-+
-+    NSDictionary* new_tile_data =
-+        [NSDictionary dictionaryWithObject:new_tile_file_data
-+                                    forKey:kDockFileDataKey];
-+#endif //MAC_APP_STORE
-+
-     NSDictionary* new_tile =
-         [NSDictionary dictionaryWithObject:new_tile_data
-                                     forKey:kDockTileDataKey];
-
+   return validAttributesForMarkedText_.get();
 diff --git a/content/common/sandbox_mac.mm b/content/common/sandbox_mac.mm
-index 590aa85..3197bf1 100644
+index 4dc7d94..87db407 100644
 --- a/content/common/sandbox_mac.mm
 +++ b/content/common/sandbox_mac.mm
-@@ -40,10 +40,12 @@ extern "C" {
- #include "ui/base/layout.h"
- #include "ui/gl/gl_surface.h"
- 
-+#ifndef MAC_APP_STORE
- extern "C" {
- void CGSSetDenyWindowServerConnections(bool);
- void CGSShutdownServerConnections();
- };
-+#endif //MAC_APP_STORE
- 
- namespace content {
- namespace {
-@@ -338,6 +340,7 @@ void Sandbox::SandboxWarmup(int sandbox_type) {
- 
-   if (sandbox_type == SANDBOX_TYPE_RENDERER &&
-       base::mac::IsOSMountainLionOrLater()) {
-+#ifndef MAC_APP_STORE
-     // Now disconnect from WindowServer, after all objects have been warmed up.
-     // Shutting down the connection requires connecting to WindowServer,
-     // so do this before actually engaging the sandbox. This is only done on
-@@ -346,6 +349,7 @@ void Sandbox::SandboxWarmup(int sandbox_type) {
-     // be printed to the system logger on certain OS versions.
-     CGSSetDenyWindowServerConnections(true);
-     CGSShutdownServerConnections();
-+#endif //MAC_APP_STORE
+@@ -541,11 +541,15 @@ bool Sandbox::EnableSandbox(int sandbox_type,
+       return false;
    }
+ #endif
+-
++#ifndef MAC_APP_STORE
+   // Initialize sandbox.
+   std::string error_str;
+   bool success = compiler.CompileAndApplyProfile(&error_str);
+   DLOG_IF(FATAL, !success) << "Failed to initialize sandbox: " << error_str;
++#else
++  // We are already sandboxed.
++  bool success = true;
++#endif
+   gSandboxIsActive = success;
+   return success;
  }
+diff --git a/remoting/branding_Chromium b/remoting/branding_Chromium
+index f0d485e..ed74fe3 100644
+--- a/remoting/branding_Chromium
++++ b/remoting/branding_Chromium
+@@ -2,7 +2,7 @@ APK_FILE_NAME=Chromoting
+ APK_PACKAGE_NAME=org.chromium.chromoting
+ DAEMON_FILE_NAME=Chromoting Host Service
+ IT2ME_HOST_DESCRIPTION=Remote Assistance Host for Chromoting
+-MAC_BUNDLE_ID=org.chromium.Chromium
++MAC_BUNDLE_ID=de.iridiumbrowser
+ MAC_CREATOR=Cr24
+ MAC_HOST_BUNDLE_ID=org.chromium.chromoting.me2me-host
+ MAC_HOST_BUNDLE_NAME=ChromotingHost.bundle
+diff --git a/ui/shell_dialogs/select_file_dialog_mac.mm b/ui/shell_dialogs/select_file_dialog_mac.mm
+index 9a4a5fd..f857df9 100644
+--- a/ui/shell_dialogs/select_file_dialog_mac.mm
++++ b/ui/shell_dialogs/select_file_dialog_mac.mm
+@@ -394,7 +394,9 @@ bool SelectFileDialogImpl::HasMultipleFileTypeChoicesImpl() {
+         index = 1;
+       }
+     } else {
++#ifndef MAC_APP_STORE
+       CHECK([panel isKindOfClass:[NSOpenPanel class]]);
++#endif
+       NSArray* urls = [static_cast<NSOpenPanel*>(panel) URLs];
+       for (NSURL* url in urls)
+         if ([url isFileURL])
+diff --git a/build/mac/tweak_info_plist.py b/build/mac/tweak_info_plist.py
+index 2057bac..c66d334 100755
+--- a/build/mac/tweak_info_plist.py
++++ b/build/mac/tweak_info_plist.py
+@@ -80,7 +80,7 @@ def _AddVersionKeys(plist, version=None):
+     VERSION_FILE = os.path.join(TOP, 'chrome/VERSION')
+ 
+     (stdout, retval1) = _GetOutput([VERSION_TOOL, '-f', VERSION_FILE, '-t',
+-                                    '@MAJOR@.@MINOR@.@BUILD@.@PATCH@'])
++                                    '@MAJOR@.@MINOR@.@BUILD@'])
+     full_version = stdout.rstrip()
+ 
+     (stdout, retval2) = _GetOutput([VERSION_TOOL, '-f', VERSION_FILE, '-t',
+@@ -102,7 +102,7 @@ def _AddVersionKeys(plist, version=None):
+   # http://lists.apple.com/archives/carbon-dev/2006/Jun/msg00139.html
+   # BUILD will always be an increasing value, so BUILD_PATH gives us something
+   # unique that meetings what LS wants.
+-  plist['CFBundleVersion'] = bundle_version
++  plist['CFBundleVersion'] = full_version
+ 
+   # Return with no error.
+   return True
+diff --git a/chrome/app/app-Info.plist b/chrome/app/app-Info.plist
+index b6fc276..da0fbba 100644
+--- a/chrome/app/app-Info.plist
++++ b/chrome/app/app-Info.plist
+@@ -244,6 +244,8 @@
+                        <string>Viewer</string>
+                </dict>
+                <dict>
++        <key>CFBundleTypeName</key>
++        <string>Extension viewer</string>
+                        <key>CFBundleTypeRole</key>
+                        <string>Viewer</string>
+                        <key>LSItemContentTypes</key>
+@@ -348,5 +350,7 @@
+                        </dict>
+                </dict>
+        </array>
++ <key>LSApplicationCategoryType</key>
++ <string>public.app-category.utilities</string>
+ </dict>
+ </plist>
+diff --git a/chrome/app_shim/app_shim.gypi b/chrome/app_shim/app_shim.gypi
+index 7e6d04db..62f209f 100644
+--- a/chrome/app_shim/app_shim.gypi
++++ b/chrome/app_shim/app_shim.gypi
+@@ -61,7 +61,10 @@
+       ],
+       'xcode_settings': {
+         'INFOPLIST_FILE': 'app_shim/app_mode-Info.plist',
+-        'APP_MODE_APP_BUNDLE_ID': '<(mac_bundle_id).app.@APP_MODE_SHORTCUT_ID@',
++        # There is no other mentions of @APP_MODE_SHORTCUT_ID@ for substitution.
++        # Temporary replace @APP_MODE_SHORTCUT_ID@ in next line with correct bundleID
++        #'APP_MODE_APP_BUNDLE_ID': '<(mac_bundle_id).app.@APP_MODE_SHORTCUT_ID@',
++        'APP_MODE_APP_BUNDLE_ID': '<(mac_bundle_id).app.app-mode-loader',
+       },
+       'postbuilds' : [
+         {

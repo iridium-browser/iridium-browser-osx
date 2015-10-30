@@ -1,8 +1,8 @@
 diff --git a/build/common.gypi b/build/common.gypi
-index 7ec5ae2..f7cf2f8 100644
+index ad84093..6a80715 100644
 --- a/build/common.gypi
 +++ b/build/common.gypi
-@@ -4852,7 +4852,7 @@
+@@ -5056,7 +5056,7 @@
            'GCC_OBJC_CALL_CXX_CDTORS': 'YES',        # -fobjc-call-cxx-cdtors
            'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES',      # -fvisibility=hidden
            'GCC_THREADSAFE_STATICS': 'NO',           # -fno-threadsafe-statics

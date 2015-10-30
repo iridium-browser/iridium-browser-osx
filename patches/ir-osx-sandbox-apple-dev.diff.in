@@ -1,12 +1,13 @@
 diff --git a/content/browser/mach_broker_mac.mm b/content/browser/mach_broker_mac.mm
-index 7061bea..858d387 100644
+index f3c4a85..c49bb1c 100644
 --- a/content/browser/mach_broker_mac.mm
 +++ b/content/browser/mach_broker_mac.mm
-@@ -287,7 +287,7 @@ std::string MachBroker::GetMachPortName() {
+@@ -258,7 +258,7 @@ std::string MachBroker::GetMachPortName() {
  #else
    // @APPLE_TEAM_ID@ should be set before building and should be the same as in signing script!!!
    // We rely on it to be correct in order to setup mach based IPC in sandboxed environment.
--  return base::StringPrintf("@APPLE_TEAM_ID@.%s.rohitfork.%d", base::mac::BaseBundleID(), pid);
+-  return base::StringPrintf("@APPLE_TEAM_ID at .%s.rohitfork.%d", base::mac::BaseBundleID(), pid);
 +  return base::StringPrintf("APPLE_TEAM_ID_TO_REPLACE.%s.rohitfork.%d", base::mac::BaseBundleID(), pid); // Setting @APPLE_TEAM_ID@ to "APPLE_TEAM_ID_TO_REPLACE"
  #endif
  }
+ 

@@ -32,17 +32,16 @@ set -eu
 # Changes section
 CHROMIUM_GIT="https://chromium.googlesource.com/chromium/src.git"
 CHROMIUM_SRC_DIR="src"
-# This is Chromium for 44.0.2403.157
+# This is Chromium for 46.0.2490.71
 # You can lookup commit hashes for versions at https://omahaproxy.appspot.com/
-CHROMIUM_VERSION="a98efd23f85089e691fb11746538a3136c878094"
+CHROMIUM_VERSION="158cc41667e72fea491e56ac074114d3bdf83591"
 
-IRIDIUM_PATCH_FILE="ir-44.1.x-44.0.2403.157.diff"
+IRIDIUM_PATCH_FILE="ir-46.0.x-46.0.2490.71.diff"
 
 # This is a patch file of changes which were not yet synced with main Iririum repo
 IRIDIUM_UNSYNCED_PATCH_FILE="ir-unsynced.diff"
 
 IRIDIUM_VERSION_PATCH_FILE="ir-version.diff"
-IRIDIUM_MAC_APP_STORE_ENABLE_PATCH="mas_enable.diff"
 IRIDIUM_BUILD_TWEAKS_PATCH="ir-build_tweaks.diff"
 IRIDIUM_DEPENDENCIES_PATCH="ir-dependencies.diff"
 
@@ -65,18 +64,13 @@ popd() { builtin popd > /dev/null; }
 
 
 print_usage() {
-	echo "Usage: iridium-osx-patch [mas]"
-	echo "Add 'mas' as the first and the only argument for Mac App Store build"
-	echo "If no 'mas' argument given we assume outside Mac App Store build"
-
-	echo "Usage: iridium-osx-patch [-m|--mode <mas/iad/nosign>] [-t|--team-id <teamID>]"
+	echo "Usage: iridium-osx-patch [-m|--mode <iad/nosign>] [-t|--team-id <teamID>]"
 	echo " -m|--mode:"
-	echo "     'mas' = Mac App Store build"
 	echo "     'iad' = Identified Apple Developer (outside Mac App Store) build"
 	echo "     'nosign' = no signature"
 	echo " -t|--team-id:"
 	echo "     Apple developer team ID for sandboxing."
-	echo "     If build mode is 'iad' or 'mas' this argument is required."
+	echo "     If build mode is 'iad' this argument is required."
 	echo "     You can find your team ID in developer.apple.com"
 }
 
@@ -107,12 +101,6 @@ do
 
 	shift
 done
-
-
-# Check for 'mas' parameter
-if [ "${BUILD_MODE}" != "mas" ]; then
-	IRIDIUM_MAC_APP_STORE_ENABLE_PATCH=
-fi
 
 
 # Check if build mode is 'mas' or 'iad' and there is osx-sandbox-patch
@@ -210,20 +198,6 @@ if [[ ! -z $IRIDIUM_UNSYNCED_PATCH_FILE ]] && [ -e "patches/$IRIDIUM_UNSYNCED_PA
 	cd "../$CHROMIUM_SRC_DIR"
 	patch -l -p1 < "$IRIDIUM_UNSYNCED_PATCH_FILE"
 	rm $IRIDIUM_UNSYNCED_PATCH_FILE
-	# go back to script dir
-	popd
-fi
-
-
-
-# apply Mac App Store enabling patch if exists
-if [[ ! -z $IRIDIUM_MAC_APP_STORE_ENABLE_PATCH ]] && [ -e "patches/$IRIDIUM_MAC_APP_STORE_ENABLE_PATCH" ]; then
-	echo "Applying Mac App Store enabling patch"
-	pushd .
-	cp -f "patches/$IRIDIUM_MAC_APP_STORE_ENABLE_PATCH" "../$CHROMIUM_SRC_DIR/"
-	cd "../$CHROMIUM_SRC_DIR"
-	patch -l -p1 < "$IRIDIUM_MAC_APP_STORE_ENABLE_PATCH"
-	rm $IRIDIUM_MAC_APP_STORE_ENABLE_PATCH
 	# go back to script dir
 	popd
 fi
