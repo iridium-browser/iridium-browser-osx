@@ -242,7 +242,7 @@ if [[ -z $NO_PATCHING ]]; then
 			fi
 			;;
 		"nosign")
-			./iridium-osx-patch.sh
+			./iridium-osx-patch.sh -m nosign
 			;;
 		*)
 			echo "Unknown parameter"
