@@ -1,52 +1,11 @@
-diff --git a/chrome/browser/ui/startup/startup_browser_creator_impl.cc b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
-index ecbc5dc..222e651 100644
---- a/chrome/browser/ui/startup/startup_browser_creator_impl.cc
-+++ b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
-@@ -968,7 +968,7 @@ void StartupBrowserCreatorImpl::InitializeWelcomeRunType(
- #else  // OS_WIN
-   // Show the welcome page as the last tab only on first-run.
-   if (first_run::ShouldShowWelcomePage())
--    welcome_run_type_ = WelcomeRunType::FIRST_RUN_LAST_TAB;
-+    welcome_run_type_ = WelcomeRunType::NONE;
- #endif  // !OS_WIN
- }
-
-diff --git a/chrome/common/chrome_paths_mac.mm b/chrome/common/chrome_paths_mac.mm
-index 09cf13b..b71c017 100644
---- a/chrome/common/chrome_paths_mac.mm
-+++ b/chrome/common/chrome_paths_mac.mm
-@@ -64,7 +64,7 @@ char* ProductDirNameForBundle(NSBundle* chrome_bundle) {
- #if defined(GOOGLE_CHROME_BUILD)
-     product_dir_name = "Google/Chrome";
- #else
--    product_dir_name = "Chromium";
-+    product_dir_name = "Iridium";
- #endif
-   }
-
-diff --git a/components/os_crypt/keychain_password_mac.mm b/components/os_crypt/keychain_password_mac.mm
-index 2ce10cd..76a67ff 100644
---- a/components/os_crypt/keychain_password_mac.mm
-+++ b/components/os_crypt/keychain_password_mac.mm
-@@ -55,8 +55,8 @@ std::string KeychainPassword::GetPassword() const {
-   const std::string service_name = "Chrome Safe Storage";
-   const std::string account_name = "Chrome";
- #else
--  const std::string service_name = "Chromium Safe Storage";
--  const std::string account_name = "Chromium";
-+  const std::string service_name = "Iridium Safe Storage";
-+  const std::string account_name = "Iridium";
- #endif
-
-   UInt32 password_length = 0;
 diff --git a/base/files/file_util.h b/base/files/file_util.h
-index ecc0d58..190fdd3 100644
+index 7f169f1..08e1516 100644
 --- a/base/files/file_util.h
 +++ b/base/files/file_util.h
 @@ -221,6 +221,11 @@ BASE_EXPORT bool GetTempDir(FilePath* path);
  // Path service may also override DIR_HOME.
  BASE_EXPORT FilePath GetHomeDir();
-
+ 
 +// Get the caches directory. Basically is used only for OS X.
 +//
 +// At the moment returns 'false' on any other system than Mac OS.
@@ -102,10 +61,10 @@ index a701bad..c6097f2 100644
  
  FilePath GetHomeDir() {
 diff --git a/base/files/file_util_posix.cc b/base/files/file_util_posix.cc
-index a8c5d44..1916a6b 100644
+index eb8620d..d41d541 100644
 --- a/base/files/file_util_posix.cc
 +++ b/base/files/file_util_posix.cc
-@@ -138,7 +138,7 @@ std::string TempFileName() {
+@@ -136,7 +136,7 @@ std::string TempFileName() {
  #if defined(GOOGLE_CHROME_BUILD)
    return std::string(".com.google.Chrome.XXXXXX");
  #else
@@ -115,10 +74,10 @@ index a8c5d44..1916a6b 100644
  }
  
 diff --git a/base/mac/foundation_util.mm b/base/mac/foundation_util.mm
-index 27d6e7c..36d7540 100644
+index bd5d514..967479d 100644
 --- a/base/mac/foundation_util.mm
 +++ b/base/mac/foundation_util.mm
-@@ -238,7 +238,7 @@ const char* BaseBundleID() {
+@@ -239,7 +239,7 @@ const char* BaseBundleID() {
  #if defined(GOOGLE_CHROME_BUILD)
    return "com.google.Chrome";
  #else
@@ -128,10 +87,10 @@ index 27d6e7c..36d7540 100644
  }
  
 diff --git a/base/memory/shared_memory_posix.cc b/base/memory/shared_memory_posix.cc
-index 2e66b34..6b2bacd 100644
+index e1e5bf2..e466f22a 100644
 --- a/base/memory/shared_memory_posix.cc
 +++ b/base/memory/shared_memory_posix.cc
-@@ -455,7 +455,7 @@ bool SharedMemory::FilePathForMemoryName(const std::string& mem_name,
+@@ -467,7 +467,7 @@ bool SharedMemory::FilePathForMemoryName(const std::string& mem_name,
  #if defined(GOOGLE_CHROME_BUILD)
    std::string name_base = std::string("com.google.Chrome");
  #else
@@ -141,10 +100,10 @@ index 2e66b34..6b2bacd 100644
    *path = temp_dir.AppendASCII(name_base + ".shmem." + mem_name);
    return true;
 diff --git a/build/chrome_settings.gypi b/build/chrome_settings.gypi
-index e9c7535..468f50b 100644
+index 646b209..f7ee963 100644
 --- a/build/chrome_settings.gypi
 +++ b/build/chrome_settings.gypi
-@@ -18,10 +18,10 @@
+@@ -20,10 +20,10 @@
              # The policy .grd file also needs the bundle id.
              'grit_defines': ['-D', 'mac_bundle_id=com.google.Chrome'],
            }, {  # else: branding!="Chrome"
@@ -157,8 +116,67 @@ index e9c7535..468f50b 100644
            }],  # branding
          ],  # conditions
        }],  # OS=="mac"
+diff --git a/build/mac/tweak_info_plist.py b/build/mac/tweak_info_plist.py
+index 72d1604..c66d334 100755
+--- a/build/mac/tweak_info_plist.py
++++ b/build/mac/tweak_info_plist.py
+@@ -80,7 +80,7 @@ def _AddVersionKeys(plist, version=None):
+     VERSION_FILE = os.path.join(TOP, 'chrome/VERSION')
+ 
+     (stdout, retval1) = _GetOutput([VERSION_TOOL, '-f', VERSION_FILE, '-t',
+-                                    '@MAJOR@.@MINOR@.@BUILD@.@PATCH@'])
++                                    '@MAJOR@.@MINOR@.@BUILD@'])
+     full_version = stdout.rstrip()
+ 
+     (stdout, retval2) = _GetOutput([VERSION_TOOL, '-f', VERSION_FILE, '-t',
+@@ -102,7 +102,7 @@ def _AddVersionKeys(plist, version=None):
+   # http://lists.apple.com/archives/carbon-dev/2006/Jun/msg00139.html
+   # BUILD will always be an increasing value, so BUILD_PATH gives us something
+   # unique that meetings what LS wants.
+-  plist['CFBundleVersion'] = bundle_version
++  plist['CFBundleVersion'] = full_version
+ 
+   # Return with no error.
+   return True
+diff --git a/chrome/app/app-Info.plist b/chrome/app/app-Info.plist
+index b6fc276..da0fbba 100644
+--- a/chrome/app/app-Info.plist
++++ b/chrome/app/app-Info.plist
+@@ -244,6 +244,8 @@
+ 			<string>Viewer</string>
+ 		</dict>
+ 		<dict>
++        <key>CFBundleTypeName</key>
++        <string>Extension viewer</string>
+ 			<key>CFBundleTypeRole</key>
+ 			<string>Viewer</string>
+ 			<key>LSItemContentTypes</key>
+@@ -348,5 +350,7 @@
+ 			</dict>
+ 		</dict>
+ 	</array>
++ <key>LSApplicationCategoryType</key>
++ <string>public.app-category.utilities</string>
+ </dict>
+ </plist>
+diff --git a/chrome/app_shim/app_shim.gypi b/chrome/app_shim/app_shim.gypi
+index 242b660..550cb61 100644
+--- a/chrome/app_shim/app_shim.gypi
++++ b/chrome/app_shim/app_shim.gypi
+@@ -63,7 +63,10 @@
+       ],
+       'xcode_settings': {
+         'INFOPLIST_FILE': 'app_shim/app_mode-Info.plist',
+-        'APP_MODE_APP_BUNDLE_ID': '<(mac_bundle_id).app.@APP_MODE_SHORTCUT_ID@',
++        # There is no other mentions of @APP_MODE_SHORTCUT_ID@ for substitution.
++        # Temporary replace @APP_MODE_SHORTCUT_ID@ in next line with correct bundleID
++        #'APP_MODE_APP_BUNDLE_ID': '<(mac_bundle_id).app.@APP_MODE_SHORTCUT_ID@',
++        'APP_MODE_APP_BUNDLE_ID': '<(mac_bundle_id).app.app-mode-loader',
+       },
+       'postbuilds' : [
+         {
 diff --git a/chrome/browser/app_controller_mac.mm b/chrome/browser/app_controller_mac.mm
-index 137a060..9f5cd0b 100644
+index fed1863..4724249 100644
 --- a/chrome/browser/app_controller_mac.mm
 +++ b/chrome/browser/app_controller_mac.mm
 @@ -160,7 +160,7 @@ CFStringRef BaseBundleID_CFString() {
@@ -200,11 +218,33 @@ index c7f1f86..e4e548c 100644
  }
  
  void DeleteSocketFiles(const base::FilePath& directory_in_tmp,
+diff --git a/chrome/browser/prefs/pref_functional_browsertest.cc b/chrome/browser/prefs/pref_functional_browsertest.cc
+index 55b93a9..7ff82dc 100644
+--- a/chrome/browser/prefs/pref_functional_browsertest.cc
++++ b/chrome/browser/prefs/pref_functional_browsertest.cc
+@@ -207,7 +207,7 @@ IN_PROC_BROWSER_TEST_F(PrefsFunctionalTest, TestHomepagePrefs) {
+ IN_PROC_BROWSER_TEST_F(PrefsFunctionalTest, PRE_TestPrivacySecurityPrefs) {
+   PrefService* prefs = browser()->profile()->GetPrefs();
+ 
+-  static_assert(chrome_browser_net::NETWORK_PREDICTION_DEFAULT !=
++/*  static_assert(chrome_browser_net::NETWORK_PREDICTION_DEFAULT !=
+                     chrome_browser_net::NETWORK_PREDICTION_NEVER,
+                 "PrefsFunctionalTest.TestPrivacySecurityPrefs relies on "
+                 "predictive network actions being enabled by default.");
+@@ -215,7 +215,7 @@ IN_PROC_BROWSER_TEST_F(PrefsFunctionalTest, PRE_TestPrivacySecurityPrefs) {
+             prefs->GetInteger(prefs::kNetworkPredictionOptions));
+   prefs->SetInteger(prefs::kNetworkPredictionOptions,
+                     chrome_browser_net::NETWORK_PREDICTION_NEVER);
+-
++*/
+   EXPECT_TRUE(prefs->GetBoolean(prefs::kSafeBrowsingEnabled));
+   prefs->SetBoolean(prefs::kSafeBrowsingEnabled, false);
+ 
 diff --git a/chrome/browser/process_singleton_posix.cc b/chrome/browser/process_singleton_posix.cc
-index 25e9eca..b976fe7 100644
+index 81a5c5f..e952af5 100644
 --- a/chrome/browser/process_singleton_posix.cc
 +++ b/chrome/browser/process_singleton_posix.cc
-@@ -742,7 +742,23 @@ ProcessSingleton::ProcessSingleton(
+@@ -731,7 +731,23 @@ ProcessSingleton::ProcessSingleton(
      : notification_callback_(notification_callback),
        current_pid_(base::GetCurrentProcId()),
        watcher_(new LinuxWatcher(this)) {
@@ -228,7 +268,7 @@ index 25e9eca..b976fe7 100644
    lock_path_ = user_data_dir.Append(chrome::kSingletonLockFilename);
    cookie_path_ = user_data_dir.Append(chrome::kSingletonCookieFilename);
  
-@@ -983,14 +999,21 @@ bool ProcessSingleton::Create() {
+@@ -972,14 +988,21 @@ bool ProcessSingleton::Create() {
        << "Temp directory mode is not 700: " << std::oct << dir_mode;
  
    // Setup the socket symlink and the two cookies.
@@ -251,7 +291,7 @@ index 25e9eca..b976fe7 100644
        !SymlinkPath(cookie, cookie_path_) ||
        !SymlinkPath(cookie, remote_cookie_path)) {
      // We've already locked things, so we can't have lost the startup race,
-@@ -1001,10 +1024,18 @@ bool ProcessSingleton::Create() {
+@@ -990,10 +1013,18 @@ bool ProcessSingleton::Create() {
      return false;
    }
  
@@ -270,11 +310,24 @@ index 25e9eca..b976fe7 100644
      CloseSocket(sock);
      return false;
    }
+diff --git a/chrome/browser/ui/startup/startup_browser_creator_impl.cc b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
+index 95cae74..ed96a19 100644
+--- a/chrome/browser/ui/startup/startup_browser_creator_impl.cc
++++ b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
+@@ -978,7 +978,7 @@ void StartupBrowserCreatorImpl::InitializeWelcomeRunType(
+ #else  // OS_WIN
+   // Show the welcome page as the last tab only on first-run.
+   if (first_run::ShouldShowWelcomePage())
+-    welcome_run_type_ = WelcomeRunType::FIRST_RUN_LAST_TAB;
++    welcome_run_type_ = WelcomeRunType::NONE;
+ #endif  // !OS_WIN
+ }
+ 
 diff --git a/chrome/common/chrome_constants.cc b/chrome/common/chrome_constants.cc
-index e41e836..9d3c102 100644
+index fa9985f..76f35bd 100644
 --- a/chrome/common/chrome_constants.cc
 +++ b/chrome/common/chrome_constants.cc
-@@ -176,7 +176,12 @@ const base::FilePath::CharType kSingletonCookieFilename[] =
+@@ -170,7 +170,12 @@ const base::FilePath::CharType kSingletonCookieFilename[] =
      FPL("SingletonCookie");
  const base::FilePath::CharType kSingletonLockFilename[] = FPL("SingletonLock");
  const base::FilePath::CharType kSingletonSocketFilename[] =
@@ -287,21 +340,49 @@ index e41e836..9d3c102 100644
  const base::FilePath::CharType kSupervisedUserSettingsFilename[] =
      FPL("Managed Mode Settings");
  const base::FilePath::CharType kThemePackFilename[] = FPL("Cached Theme.pak");
+diff --git a/chrome/common/chrome_paths_mac.mm b/chrome/common/chrome_paths_mac.mm
+index 09cf13b..b71c017 100644
+--- a/chrome/common/chrome_paths_mac.mm
++++ b/chrome/common/chrome_paths_mac.mm
+@@ -64,7 +64,7 @@ char* ProductDirNameForBundle(NSBundle* chrome_bundle) {
+ #if defined(GOOGLE_CHROME_BUILD)
+     product_dir_name = "Google/Chrome";
+ #else
+-    product_dir_name = "Chromium";
++    product_dir_name = "Iridium";
+ #endif
+   }
+ 
 diff --git a/chrome/common/mac/cfbundle_blocker_unittest.mm b/chrome/common/mac/cfbundle_blocker_unittest.mm
-index 2e23fe2..88fb1a0 100644
+index 2e23fe2..f821ee2 100644
 --- a/chrome/common/mac/cfbundle_blocker_unittest.mm
 +++ b/chrome/common/mac/cfbundle_blocker_unittest.mm
 @@ -26,7 +26,7 @@ TEST(CFBundleBlockerTest, IsBundleAllowed) {
      { nil, nil, false },
-
+ 
      // Block bundle IDs that aren't in the whitelist.
 -    { @"org.chromium.Chromium.evil", nil, false },
 +    { @"de.iridiumbrowser.evil", nil, false },
-
+ 
      // The AllowedBundle structure for Google Authetnicator BT doesn't
      // require a version, so this should work equally well with any version
+diff --git a/components/os_crypt/keychain_password_mac.mm b/components/os_crypt/keychain_password_mac.mm
+index 2ce10cd..76a67ff 100644
+--- a/components/os_crypt/keychain_password_mac.mm
++++ b/components/os_crypt/keychain_password_mac.mm
+@@ -55,8 +55,8 @@ std::string KeychainPassword::GetPassword() const {
+   const std::string service_name = "Chrome Safe Storage";
+   const std::string account_name = "Chrome";
+ #else
+-  const std::string service_name = "Chromium Safe Storage";
+-  const std::string account_name = "Chromium";
++  const std::string service_name = "Iridium Safe Storage";
++  const std::string account_name = "Iridium";
+ #endif
+ 
+   UInt32 password_length = 0;
 diff --git a/content/browser/accessibility/browser_accessibility_cocoa.mm b/content/browser/accessibility/browser_accessibility_cocoa.mm
-index 7afcb30..5d51ba3 100644
+index 100d9d0..6da1ede 100644
 --- a/content/browser/accessibility/browser_accessibility_cocoa.mm
 +++ b/content/browser/accessibility/browser_accessibility_cocoa.mm
 @@ -19,10 +19,12 @@
@@ -317,7 +398,7 @@ index 7afcb30..5d51ba3 100644
  
  using ui::AXNodeData;
  using content::AccessibilityMatchPredicate;
-@@ -422,7 +424,9 @@ bool InitializeAccessibilityTreeSearch(
+@@ -420,7 +422,9 @@ bool InitializeAccessibilityTreeSearch(
  
  - (void)detach {
    if (browserAccessibility_) {
@@ -328,7 +409,7 @@ index 7afcb30..5d51ba3 100644
    }
  }
 diff --git a/content/browser/device_monitor_mac.mm b/content/browser/device_monitor_mac.mm
-index c3c713c..75ef28a 100644
+index 36e9a57..83ed274 100644
 --- a/content/browser/device_monitor_mac.mm
 +++ b/content/browser/device_monitor_mac.mm
 @@ -4,7 +4,10 @@
@@ -403,10 +484,10 @@ index c3c713c..75ef28a 100644
  
  }  // namespace content
 diff --git a/content/browser/mach_broker_mac.mm b/content/browser/mach_broker_mac.mm
-index 3efec6b..f3c4a85 100644
+index 4cf3bb6..fb2981f 100644
 --- a/content/browser/mach_broker_mac.mm
 +++ b/content/browser/mach_broker_mac.mm
-@@ -253,7 +253,13 @@ std::string MachBroker::GetMachPortName() {
+@@ -155,7 +155,13 @@ std::string MachBroker::GetMachPortName() {
  
    // In non-browser (child) processes, use the parent's pid.
    const pid_t pid = is_child ? getppid() : getpid();
@@ -419,12 +500,12 @@ index 3efec6b..f3c4a85 100644
 +#endif
  }
  
- void MachBroker::RegisterNotifications() {
+ MachBroker::MachBroker() : initialized_(false) {
 diff --git a/content/browser/renderer_host/render_widget_host_view_mac.mm b/content/browser/renderer_host/render_widget_host_view_mac.mm
-index 66f1c31..b822370 100644
+index 2537db7..e576eac 100644
 --- a/content/browser/renderer_host/render_widget_host_view_mac.mm
 +++ b/content/browser/renderer_host/render_widget_host_view_mac.mm
-@@ -2806,9 +2806,12 @@ void RenderWidgetHostViewMac::OnDisplayMetricsChanged(
+@@ -2895,9 +2895,12 @@ void RenderWidgetHostViewMac::OnDisplayMetricsChanged(
  // Since this implementation doesn't have to wait any IPC calls, this doesn't
  // make any key-typing jank. --hbono 7/23/09
  //
@@ -437,7 +518,7 @@ index 66f1c31..b822370 100644
  
  - (NSArray *)validAttributesForMarkedText {
    // This code is just copied from WebKit except renaming variables.
-@@ -2817,7 +2820,9 @@ extern NSString *NSTextInputReplacementRangeAttributeName;
+@@ -2906,7 +2909,9 @@ extern NSString *NSTextInputReplacementRangeAttributeName;
          NSUnderlineStyleAttributeName,
          NSUnderlineColorAttributeName,
          NSMarkedClauseSegmentAttributeName,
@@ -469,10 +550,10 @@ index 4dc7d94..87db407 100644
    return success;
  }
 diff --git a/remoting/branding_Chromium b/remoting/branding_Chromium
-index f0d485e..ed74fe3 100644
+index 3c3a43d..df59962 100644
 --- a/remoting/branding_Chromium
 +++ b/remoting/branding_Chromium
-@@ -2,7 +2,7 @@ APK_FILE_NAME=Chromoting
+@@ -1,7 +1,7 @@
  APK_PACKAGE_NAME=org.chromium.chromoting
  DAEMON_FILE_NAME=Chromoting Host Service
  IT2ME_HOST_DESCRIPTION=Remote Assistance Host for Chromoting
@@ -495,84 +576,3 @@ index 9a4a5fd..f857df9 100644
        NSArray* urls = [static_cast<NSOpenPanel*>(panel) URLs];
        for (NSURL* url in urls)
          if ([url isFileURL])
-diff --git a/build/mac/tweak_info_plist.py b/build/mac/tweak_info_plist.py
-index 2057bac..c66d334 100755
---- a/build/mac/tweak_info_plist.py
-+++ b/build/mac/tweak_info_plist.py
-@@ -80,7 +80,7 @@ def _AddVersionKeys(plist, version=None):
-     VERSION_FILE = os.path.join(TOP, 'chrome/VERSION')
- 
-     (stdout, retval1) = _GetOutput([VERSION_TOOL, '-f', VERSION_FILE, '-t',
--                                    '@MAJOR@.@MINOR@.@BUILD@.@PATCH@'])
-+                                    '@MAJOR@.@MINOR@.@BUILD@'])
-     full_version = stdout.rstrip()
- 
-     (stdout, retval2) = _GetOutput([VERSION_TOOL, '-f', VERSION_FILE, '-t',
-@@ -102,7 +102,7 @@ def _AddVersionKeys(plist, version=None):
-   # http://lists.apple.com/archives/carbon-dev/2006/Jun/msg00139.html
-   # BUILD will always be an increasing value, so BUILD_PATH gives us something
-   # unique that meetings what LS wants.
--  plist['CFBundleVersion'] = bundle_version
-+  plist['CFBundleVersion'] = full_version
- 
-   # Return with no error.
-   return True
-diff --git a/chrome/app/app-Info.plist b/chrome/app/app-Info.plist
-index b6fc276..da0fbba 100644
---- a/chrome/app/app-Info.plist
-+++ b/chrome/app/app-Info.plist
-@@ -244,6 +244,8 @@
-                        <string>Viewer</string>
-                </dict>
-                <dict>
-+        <key>CFBundleTypeName</key>
-+        <string>Extension viewer</string>
-                        <key>CFBundleTypeRole</key>
-                        <string>Viewer</string>
-                        <key>LSItemContentTypes</key>
-@@ -348,5 +350,7 @@
-                        </dict>
-                </dict>
-        </array>
-+ <key>LSApplicationCategoryType</key>
-+ <string>public.app-category.utilities</string>
- </dict>
- </plist>
-diff --git a/chrome/app_shim/app_shim.gypi b/chrome/app_shim/app_shim.gypi
-index 7e6d04db..62f209f 100644
---- a/chrome/app_shim/app_shim.gypi
-+++ b/chrome/app_shim/app_shim.gypi
-@@ -61,7 +61,10 @@
-       ],
-       'xcode_settings': {
-         'INFOPLIST_FILE': 'app_shim/app_mode-Info.plist',
--        'APP_MODE_APP_BUNDLE_ID': '<(mac_bundle_id).app.@APP_MODE_SHORTCUT_ID@',
-+        # There is no other mentions of @APP_MODE_SHORTCUT_ID@ for substitution.
-+        # Temporary replace @APP_MODE_SHORTCUT_ID@ in next line with correct bundleID
-+        #'APP_MODE_APP_BUNDLE_ID': '<(mac_bundle_id).app.@APP_MODE_SHORTCUT_ID@',
-+        'APP_MODE_APP_BUNDLE_ID': '<(mac_bundle_id).app.app-mode-loader',
-       },
-       'postbuilds' : [
-         {
-diff --git a/chrome/browser/prefs/pref_functional_browsertest.cc b/chrome/browser/prefs/pref_functional_browsertest.cc
-index 0127db2..3368040 100644
---- a/chrome/browser/prefs/pref_functional_browsertest.cc
-+++ b/chrome/browser/prefs/pref_functional_browsertest.cc
-@@ -205,7 +205,7 @@ IN_PROC_BROWSER_TEST_F(PrefsFunctionalTest, TestHomepagePrefs) {
- IN_PROC_BROWSER_TEST_F(PrefsFunctionalTest, PRE_TestPrivacySecurityPrefs) {
-   PrefService* prefs = browser()->profile()->GetPrefs();
- 
--  static_assert(chrome_browser_net::NETWORK_PREDICTION_DEFAULT !=
-+/*  static_assert(chrome_browser_net::NETWORK_PREDICTION_DEFAULT !=
-                     chrome_browser_net::NETWORK_PREDICTION_NEVER,
-                 "PrefsFunctionalTest.TestPrivacySecurityPrefs relies on "
-                 "predictive network actions being enabled by default.");
-@@ -213,7 +213,7 @@ IN_PROC_BROWSER_TEST_F(PrefsFunctionalTest, PRE_TestPrivacySecurityPrefs) {
-             prefs->GetInteger(prefs::kNetworkPredictionOptions));
-   prefs->SetInteger(prefs::kNetworkPredictionOptions,
-                     chrome_browser_net::NETWORK_PREDICTION_NEVER);
--
-+*/
-   EXPECT_TRUE(prefs->GetBoolean(prefs::kSafeBrowsingEnabled));
-   prefs->SetBoolean(prefs::kSafeBrowsingEnabled, false);
- 
