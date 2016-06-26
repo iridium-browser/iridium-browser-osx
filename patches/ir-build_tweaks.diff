@@ -1,13 +1,13 @@
 diff --git a/build/common.gypi b/build/common.gypi
-index ad84093..6a80715 100644
+index 2063a6c..2314609 100644
 --- a/build/common.gypi
 +++ b/build/common.gypi
-@@ -5016,7 +5016,7 @@
+@@ -5053,7 +5053,7 @@
+           'GCC_INLINES_ARE_PRIVATE_EXTERN': 'YES',
            'GCC_OBJC_CALL_CXX_CDTORS': 'YES',        # -fobjc-call-cxx-cdtors
-           'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES',      # -fvisibility=hidden
            'GCC_THREADSAFE_STATICS': 'NO',           # -fno-threadsafe-statics
 -          'GCC_TREAT_WARNINGS_AS_ERRORS': 'YES',    # -Werror
 +          'GCC_TREAT_WARNINGS_AS_ERRORS': 'NO',     # -Werror
-           'GCC_VERSION': '4.2',
-           'GCC_WARN_ABOUT_MISSING_NEWLINE': 'YES',  # -Wnewline-eof
+           'GCC_VERSION': 'com.apple.compilers.llvm.clang.1_0',
            'USE_HEADERMAP': 'NO',
+           'WARNING_CFLAGS': [
