@@ -1,5 +1,5 @@
 diff --git a/base/files/file_util.h b/base/files/file_util.h
-index dfc10a3..d195717 100644
+index 05b3cbf..a094ce7 100644
 --- a/base/files/file_util.h
 +++ b/base/files/file_util.h
 @@ -221,6 +221,11 @@ BASE_EXPORT bool GetTempDir(FilePath* path);
@@ -61,7 +61,7 @@ index e9c6c65..e1cc741 100644
  
  FilePath GetHomeDir() {
 diff --git a/base/files/file_util_posix.cc b/base/files/file_util_posix.cc
-index 7e31bfb..feb61ef 100644
+index 802ed51..3987ce8 100644
 --- a/base/files/file_util_posix.cc
 +++ b/base/files/file_util_posix.cc
 @@ -138,7 +138,7 @@ std::string TempFileName() {
@@ -74,7 +74,7 @@ index 7e31bfb..feb61ef 100644
  }
  
 diff --git a/base/mac/foundation_util.mm b/base/mac/foundation_util.mm
-index 524f17c..7424b03 100644
+index 6ae5df3..5daf17c 100644
 --- a/base/mac/foundation_util.mm
 +++ b/base/mac/foundation_util.mm
 @@ -242,7 +242,7 @@ const char* BaseBundleID() {
@@ -139,7 +139,7 @@ index a6ffbca..6a7b358 100755
    # Return with no error.
    return True
 diff --git a/chrome/app/app-Info.plist b/chrome/app/app-Info.plist
-index bace54f..edbdbb4 100644
+index c5939d4..95d5f46 100644
 --- a/chrome/app/app-Info.plist
 +++ b/chrome/app/app-Info.plist
 @@ -244,6 +244,8 @@
@@ -158,7 +158,7 @@ index bace54f..edbdbb4 100644
 + <key>LSApplicationCategoryType</key>
 + <string>public.app-category.utilities</string>
          <key>NSUserNotificationAlertStyle</key>
-         <string>alert</string>
+         <string>banner</string>
  </dict>
 diff --git a/chrome/app_shim/app_shim.gypi b/chrome/app_shim/app_shim.gypi
 index 242b660..550cb61 100644
@@ -177,10 +177,10 @@ index 242b660..550cb61 100644
        'postbuilds' : [
          {
 diff --git a/chrome/browser/app_controller_mac.mm b/chrome/browser/app_controller_mac.mm
-index 36da6d0..4d1d719 100644
+index c0a864c..ed721d9 100644
 --- a/chrome/browser/app_controller_mac.mm
 +++ b/chrome/browser/app_controller_mac.mm
-@@ -163,7 +163,7 @@ CFStringRef BaseBundleID_CFString() {
+@@ -162,7 +162,7 @@ CFStringRef BaseBundleID_CFString() {
    return base::mac::NSToCFCast(base_bundle_id);
  }
  
@@ -242,7 +242,7 @@ index b449b607..5be4685 100644
    prefs->SetBoolean(prefs::kSafeBrowsingEnabled, false);
  
 diff --git a/chrome/browser/process_singleton_posix.cc b/chrome/browser/process_singleton_posix.cc
-index 0d5b6b0..450adbc 100644
+index d5394b8..1976082 100644
 --- a/chrome/browser/process_singleton_posix.cc
 +++ b/chrome/browser/process_singleton_posix.cc
 @@ -733,7 +733,23 @@ ProcessSingleton::ProcessSingleton(
@@ -312,10 +312,10 @@ index 0d5b6b0..450adbc 100644
      return false;
    }
 diff --git a/chrome/browser/ui/startup/startup_browser_creator_impl.cc b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
-index f59c681..5233d1a 100644
+index f61c7a8..0fae2e0 100644
 --- a/chrome/browser/ui/startup/startup_browser_creator_impl.cc
 +++ b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
-@@ -982,7 +982,7 @@ void StartupBrowserCreatorImpl::InitializeWelcomeRunType(
+@@ -990,7 +990,7 @@ void StartupBrowserCreatorImpl::InitializeWelcomeRunType(
  #else  // OS_WIN
    // Show the welcome page as the last tab only on first-run.
    if (first_run::ShouldShowWelcomePage())
@@ -325,10 +325,10 @@ index f59c681..5233d1a 100644
  }
  
 diff --git a/chrome/common/chrome_constants.cc b/chrome/common/chrome_constants.cc
-index 69dbbe9..493522e 100644
+index a48b5cc..1818ba6 100644
 --- a/chrome/common/chrome_constants.cc
 +++ b/chrome/common/chrome_constants.cc
-@@ -168,7 +168,12 @@ const base::FilePath::CharType kSingletonCookieFilename[] =
+@@ -164,7 +164,12 @@ const base::FilePath::CharType kSingletonCookieFilename[] =
      FPL("SingletonCookie");
  const base::FilePath::CharType kSingletonLockFilename[] = FPL("SingletonLock");
  const base::FilePath::CharType kSingletonSocketFilename[] =
@@ -383,23 +383,23 @@ index 2ce10cd..76a67ff 100644
  
    UInt32 password_length = 0;
 diff --git a/content/browser/accessibility/browser_accessibility_cocoa.mm b/content/browser/accessibility/browser_accessibility_cocoa.mm
-index 78c8c01..7fc514e 100644
+index 947575e..d49e873 100644
 --- a/content/browser/accessibility/browser_accessibility_cocoa.mm
 +++ b/content/browser/accessibility/browser_accessibility_cocoa.mm
-@@ -20,10 +20,12 @@
- #include "content/public/common/content_client.h"
- #import "ui/accessibility/platform/ax_platform_node_mac.h"
+@@ -84,10 +84,12 @@ const int kAXResultsLimitNoLimit = -1;
+ 
+ extern "C" {
  
 +#ifndef MAC_APP_STORE
  // See http://openradar.appspot.com/9896491. This SPI has been tested on 10.5,
  // 10.6, and 10.7. It allows accessibility clients to observe events posted on
  // this object.
- extern "C" void NSAccessibilityUnregisterUniqueIdForUIElement(id element);
+ void NSAccessibilityUnregisterUniqueIdForUIElement(id element);
 +#endif
  
- using ui::AXNodeData;
- using content::AccessibilityMatchPredicate;
-@@ -421,7 +423,9 @@ bool InitializeAccessibilityTreeSearch(
+ // The following are private accessibility APIs required for cursor navigation
+ // and text selection. VoiceOver started relying on them in Mac OS X 10.11.
+@@ -490,7 +492,9 @@ bool InitializeAccessibilityTreeSearch(
  
  - (void)detach {
    if (browserAccessibility_) {
@@ -409,81 +409,6 @@ index 78c8c01..7fc514e 100644
      browserAccessibility_ = NULL;
    }
  }
-diff --git a/content/browser/device_monitor_mac.mm b/content/browser/device_monitor_mac.mm
-index 248b99d..f9affdb 100644
---- a/content/browser/device_monitor_mac.mm
-+++ b/content/browser/device_monitor_mac.mm
-@@ -4,7 +4,10 @@
- 
- #include "content/browser/device_monitor_mac.h"
- 
-+#ifndef MAC_APP_STORE
- #import <QTKit/QTKit.h>
-+#endif
-+#import <Foundation/Foundation.h>
- 
- #include <set>
- 
-@@ -151,6 +154,7 @@ class QTKitMonitorImpl : public DeviceMonitorMacImpl {
- 
- QTKitMonitorImpl::QTKitMonitorImpl(content::DeviceMonitorMac* monitor)
-     : DeviceMonitorMacImpl(monitor) {
-+#ifndef MAC_APP_STORE
-   NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
-   device_arrival_ =
-       [nc addObserverForName:QTCaptureDeviceWasConnectedNotification
-@@ -170,27 +174,32 @@ QTKitMonitorImpl::QTKitMonitorImpl(content::DeviceMonitorMac* monitor)
-                        queue:nil
-                   usingBlock:^(NSNotification* notification) {
-                       OnAttributeChanged(notification);}];
-+#endif
- }
- 
- QTKitMonitorImpl::~QTKitMonitorImpl() {
-+#ifndef MAC_APP_STORE
-   NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
-   [nc removeObserver:device_arrival_];
-   [nc removeObserver:device_removal_];
-   [nc removeObserver:device_change_];
-+#endif
- }
- 
- void QTKitMonitorImpl::OnAttributeChanged(
-     NSNotification* notification) {
-+#ifndef MAC_APP_STORE
-   if ([[[notification userInfo]
-          objectForKey:QTCaptureDeviceChangedAttributeKey]
-       isEqualToString:QTCaptureDeviceSuspendedAttribute]) {
-     OnDeviceChanged();
-   }
-+#endif
- }
- 
- void QTKitMonitorImpl::OnDeviceChanged() {
-   std::vector<DeviceInfo> snapshot_devices;
--
-+#ifndef MAC_APP_STORE
-   NSArray* devices = [QTCaptureDevice inputDevices];
-   for (QTCaptureDevice* device in devices) {
-     DeviceInfo::DeviceType device_type = DeviceInfo::kUnknown;
-@@ -212,6 +221,7 @@ void QTKitMonitorImpl::OnDeviceChanged() {
-     snapshot_devices.push_back(
-         DeviceInfo([[device uniqueID] UTF8String], device_type));
-   }
-+#endif
-   ConsolidateDevicesListAndNotify(snapshot_devices);
- }
- 
-@@ -562,7 +572,9 @@ void DeviceMonitorMac::NotifyDeviceChanged(
-     base::SystemMonitor::DeviceType type) {
-   DCHECK(thread_checker_.CalledOnValidThread());
-   // TODO(xians): Remove the global variable for SystemMonitor.
-+#ifndef MAC_APP_STORE
-   base::SystemMonitor::Get()->ProcessDevicesChanged(type);
-+#endif
- }
- 
- }  // namespace content
 diff --git a/content/browser/mach_broker_mac.mm b/content/browser/mach_broker_mac.mm
 index 4cf3bb6..fb2981f 100644
 --- a/content/browser/mach_broker_mac.mm
@@ -503,10 +428,10 @@ index 4cf3bb6..fb2981f 100644
  
  MachBroker::MachBroker() : initialized_(false) {
 diff --git a/content/browser/renderer_host/render_widget_host_view_mac.mm b/content/browser/renderer_host/render_widget_host_view_mac.mm
-index ef38d30..6195139 100644
+index 5eb7679..5e1e09b 100644
 --- a/content/browser/renderer_host/render_widget_host_view_mac.mm
 +++ b/content/browser/renderer_host/render_widget_host_view_mac.mm
-@@ -2892,9 +2892,12 @@ void RenderWidgetHostViewMac::OnDisplayMetricsChanged(
+@@ -2901,9 +2901,12 @@ void RenderWidgetHostViewMac::OnDisplayMetricsChanged(
  // Since this implementation doesn't have to wait any IPC calls, this doesn't
  // make any key-typing jank. --hbono 7/23/09
  //
@@ -519,7 +444,7 @@ index ef38d30..6195139 100644
  
  - (NSArray *)validAttributesForMarkedText {
    // This code is just copied from WebKit except renaming variables.
-@@ -2903,7 +2906,9 @@ extern NSString *NSTextInputReplacementRangeAttributeName;
+@@ -2912,7 +2915,9 @@ extern NSString *NSTextInputReplacementRangeAttributeName;
          NSUnderlineStyleAttributeName,
          NSUnderlineColorAttributeName,
          NSMarkedClauseSegmentAttributeName,
@@ -550,6 +475,79 @@ index ca915a7..91b8451 100644
    gSandboxIsActive = success;
    return success;
  }
+diff --git a/media/capture/device_monitor_mac.mm b/media/capture/device_monitor_mac.mm
+index aab9884..665570c 100644
+--- a/media/capture/device_monitor_mac.mm
++++ b/media/capture/device_monitor_mac.mm
+@@ -4,7 +4,10 @@
+ 
+ #include "media/capture/device_monitor_mac.h"
+ 
++#ifndef MAC_APP_STORE
+ #import <QTKit/QTKit.h>
++#endif
++#import <Foundation/Foundation.h>
+ 
+ #include <set>
+ 
+@@ -143,6 +146,7 @@ class QTKitMonitorImpl : public DeviceMonitorMacImpl {
+ 
+ QTKitMonitorImpl::QTKitMonitorImpl(media::DeviceMonitorMac* monitor)
+     : DeviceMonitorMacImpl(monitor) {
++#ifndef MAC_APP_STORE
+   NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
+   device_arrival_ =
+       [nc addObserverForName:QTCaptureDeviceWasConnectedNotification
+@@ -165,25 +169,30 @@ QTKitMonitorImpl::QTKitMonitorImpl(media::DeviceMonitorMac* monitor)
+                   usingBlock:^(NSNotification* notification) {
+                     OnAttributeChanged(notification);
+                   }];
++#endif
+ }
+ 
+ QTKitMonitorImpl::~QTKitMonitorImpl() {
++#ifndef MAC_APP_STORE
+   NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
+   [nc removeObserver:device_arrival_];
+   [nc removeObserver:device_removal_];
+   [nc removeObserver:device_change_];
++#endif
+ }
+ 
+ void QTKitMonitorImpl::OnAttributeChanged(NSNotification* notification) {
++#ifndef MAC_APP_STORE
+   if ([[[notification userInfo] objectForKey:QTCaptureDeviceChangedAttributeKey]
+           isEqualToString:QTCaptureDeviceSuspendedAttribute]) {
+     OnDeviceChanged();
+   }
++#endif
+ }
+ 
+ void QTKitMonitorImpl::OnDeviceChanged() {
+   std::vector<DeviceInfo> snapshot_devices;
+-
++#ifndef MAC_APP_STORE
+   NSArray* devices = [QTCaptureDevice inputDevices];
+   for (QTCaptureDevice* device in devices) {
+     DeviceInfo::DeviceType device_type = DeviceInfo::kUnknown;
+@@ -205,6 +214,7 @@ void QTKitMonitorImpl::OnDeviceChanged() {
+     snapshot_devices.push_back(
+         DeviceInfo([[device uniqueID] UTF8String], device_type));
+   }
++#endif
+   ConsolidateDevicesListAndNotify(snapshot_devices);
+ }
+ 
+@@ -565,7 +575,9 @@ void DeviceMonitorMac::NotifyDeviceChanged(
+     base::SystemMonitor::DeviceType type) {
+   DCHECK(thread_checker_.CalledOnValidThread());
+   // TODO(xians): Remove the global variable for SystemMonitor.
++#ifndef MAC_APP_STORE
+   base::SystemMonitor::Get()->ProcessDevicesChanged(type);
++#endif
+ }
+ 
+ }  // namespace media
 diff --git a/remoting/branding_Chromium b/remoting/branding_Chromium
 index 3c3a43d..df59962 100644
 --- a/remoting/branding_Chromium
@@ -564,10 +562,10 @@ index 3c3a43d..df59962 100644
  MAC_HOST_BUNDLE_ID=org.chromium.chromoting.me2me-host
  MAC_HOST_BUNDLE_NAME=ChromotingHost.bundle
 diff --git a/ui/shell_dialogs/select_file_dialog_mac.mm b/ui/shell_dialogs/select_file_dialog_mac.mm
-index 6fe6a62..8745fe3 100644
+index e53c389..79ca929 100644
 --- a/ui/shell_dialogs/select_file_dialog_mac.mm
 +++ b/ui/shell_dialogs/select_file_dialog_mac.mm
-@@ -450,7 +450,9 @@ bool SelectFileDialogImpl::HasMultipleFileTypeChoicesImpl() {
+@@ -461,7 +461,9 @@ bool SelectFileDialogImpl::HasMultipleFileTypeChoicesImpl() {
          index = 1;
        }
      } else {
