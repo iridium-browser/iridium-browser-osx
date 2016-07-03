@@ -3,7 +3,7 @@ index 524f08e..dcc97be 100644
 --- a/chrome/VERSION
 +++ b/chrome/VERSION
 @@ -1,4 +1,4 @@
- MAJOR=50
+ MAJOR=51
 -MINOR=0
 -BUILD=0
 -PATCH=0

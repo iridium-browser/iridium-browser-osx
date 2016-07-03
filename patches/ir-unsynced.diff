@@ -1,8 +1,8 @@
 diff --git a/base/files/file_util.h b/base/files/file_util.h
-index 05b3cbf..a094ce7 100644
+index 8f7d53c..81b8e8c 100644
 --- a/base/files/file_util.h
 +++ b/base/files/file_util.h
-@@ -221,6 +221,11 @@ BASE_EXPORT bool GetTempDir(FilePath* path);
+@@ -220,6 +220,11 @@ BASE_EXPORT bool GetTempDir(FilePath* path);
  // Path service may also override DIR_HOME.
  BASE_EXPORT FilePath GetHomeDir();
  
@@ -61,10 +61,10 @@ index e9c6c65..e1cc741 100644
  
  FilePath GetHomeDir() {
 diff --git a/base/files/file_util_posix.cc b/base/files/file_util_posix.cc
-index 802ed51..3987ce8 100644
+index ca1c5250..3621fdc 100644
 --- a/base/files/file_util_posix.cc
 +++ b/base/files/file_util_posix.cc
-@@ -138,7 +138,7 @@ std::string TempFileName() {
+@@ -137,7 +137,7 @@ std::string TempFileName() {
  #if defined(GOOGLE_CHROME_BUILD)
    return std::string(".com.google.Chrome.XXXXXX");
  #else
@@ -86,6 +86,25 @@ index 6ae5df3..5daf17c 100644
  #endif
  }
  
+diff --git a/base/mac/mach_port_broker.mm b/base/mac/mach_port_broker.mm
+index bd47017..e90f1cf 100644
+--- a/base/mac/mach_port_broker.mm
++++ b/base/mac/mach_port_broker.mm
+@@ -73,8 +73,14 @@ std::string MachPortBroker::GetMachPortName(const std::string& name,
+                                             bool is_child) {
+   // In child processes, use the parent's pid.
+   const pid_t pid = is_child ? getppid() : getpid();
++#ifndef MAC_APP_STORE
+   return base::StringPrintf(
+       "%s.%s.%d", base::mac::BaseBundleID(), name.c_str(), pid);
++#else
++  // @APPLE_TEAM_ID@ should be set before building and should be the same as in signing script!!!
++  // We rely on it to be correct in order to setup mach based IPC in sandboxed environment.
++  return base::StringPrintf("@APPLE_TEAM_ID at .%s.rohitfork.%d", base::mac::BaseBundleID(), pid);
++#endif
+ }
+ 
+ mach_port_t MachPortBroker::TaskForPid(base::ProcessHandle pid) const {
 diff --git a/base/memory/shared_memory_posix.cc b/base/memory/shared_memory_posix.cc
 index d55c2df..72a6e2f 100644
 --- a/base/memory/shared_memory_posix.cc
@@ -177,10 +196,10 @@ index 242b660..550cb61 100644
        'postbuilds' : [
          {
 diff --git a/chrome/browser/app_controller_mac.mm b/chrome/browser/app_controller_mac.mm
-index c0a864c..ed721d9 100644
+index 5e46b72..fe894c9 100644
 --- a/chrome/browser/app_controller_mac.mm
 +++ b/chrome/browser/app_controller_mac.mm
-@@ -162,7 +162,7 @@ CFStringRef BaseBundleID_CFString() {
+@@ -164,7 +164,7 @@ CFStringRef BaseBundleID_CFString() {
    return base::mac::NSToCFCast(base_bundle_id);
  }
  
@@ -312,10 +331,10 @@ index d5394b8..1976082 100644
      return false;
    }
 diff --git a/chrome/browser/ui/startup/startup_browser_creator_impl.cc b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
-index f61c7a8..0fae2e0 100644
+index 6ac0bc79..d96ec6a 100644
 --- a/chrome/browser/ui/startup/startup_browser_creator_impl.cc
 +++ b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
-@@ -990,7 +990,7 @@ void StartupBrowserCreatorImpl::InitializeWelcomeRunType(
+@@ -987,7 +987,7 @@ void StartupBrowserCreatorImpl::InitializeWelcomeRunType(
  #else  // OS_WIN
    // Show the welcome page as the last tab only on first-run.
    if (first_run::ShouldShowWelcomePage())
@@ -342,10 +361,10 @@ index a48b5cc..1818ba6 100644
      FPL("Managed Mode Settings");
  const base::FilePath::CharType kThemePackFilename[] = FPL("Cached Theme.pak");
 diff --git a/chrome/common/chrome_paths_mac.mm b/chrome/common/chrome_paths_mac.mm
-index 5d69520..014262b 100644
+index db32629..0cb0a59 100644
 --- a/chrome/common/chrome_paths_mac.mm
 +++ b/chrome/common/chrome_paths_mac.mm
-@@ -65,7 +65,7 @@ char* ProductDirNameForBundle(NSBundle* chrome_bundle) {
+@@ -66,7 +66,7 @@ char* ProductDirNameForBundle(NSBundle* chrome_bundle) {
  #if defined(GOOGLE_CHROME_BUILD)
      product_dir_name = "Google/Chrome";
  #else
@@ -383,10 +402,10 @@ index 2ce10cd..76a67ff 100644
  
    UInt32 password_length = 0;
 diff --git a/content/browser/accessibility/browser_accessibility_cocoa.mm b/content/browser/accessibility/browser_accessibility_cocoa.mm
-index 947575e..d49e873 100644
+index 1ae72bd..e5e0f20 100644
 --- a/content/browser/accessibility/browser_accessibility_cocoa.mm
 +++ b/content/browser/accessibility/browser_accessibility_cocoa.mm
-@@ -84,10 +84,12 @@ const int kAXResultsLimitNoLimit = -1;
+@@ -100,10 +100,12 @@ const int kAXResultsLimitNoLimit = -1;
  
  extern "C" {
  
@@ -399,39 +418,21 @@ index 947575e..d49e873 100644
  
  // The following are private accessibility APIs required for cursor navigation
  // and text selection. VoiceOver started relying on them in Mac OS X 10.11.
-@@ -490,7 +492,9 @@ bool InitializeAccessibilityTreeSearch(
+@@ -512,7 +514,9 @@ bool InitializeAccessibilityTreeSearch(
  
  - (void)detach {
-   if (browserAccessibility_) {
+   if (browserAccessibility_)
 +#ifndef MAC_APP_STORE
      NSAccessibilityUnregisterUniqueIdForUIElement(self);
 +#endif
-     browserAccessibility_ = NULL;
-   }
- }
-diff --git a/content/browser/mach_broker_mac.mm b/content/browser/mach_broker_mac.mm
-index 4cf3bb6..fb2981f 100644
---- a/content/browser/mach_broker_mac.mm
-+++ b/content/browser/mach_broker_mac.mm
-@@ -155,7 +155,13 @@ std::string MachBroker::GetMachPortName() {
- 
-   // In non-browser (child) processes, use the parent's pid.
-   const pid_t pid = is_child ? getppid() : getpid();
-+#ifndef MAC_APP_STORE
-   return base::StringPrintf("%s.rohitfork.%d", base::mac::BaseBundleID(), pid);
-+#else
-+  // @APPLE_TEAM_ID@ should be set before building and should be the same as in signing script!!!
-+  // We rely on it to be correct in order to setup mach based IPC in sandboxed environment.
-+  return base::StringPrintf("@APPLE_TEAM_ID at .%s.rohitfork.%d", base::mac::BaseBundleID(), pid);
-+#endif
+   browserAccessibility_ = nullptr;
  }
  
- MachBroker::MachBroker() : initialized_(false) {
 diff --git a/content/browser/renderer_host/render_widget_host_view_mac.mm b/content/browser/renderer_host/render_widget_host_view_mac.mm
-index 5eb7679..5e1e09b 100644
+index 0581389..bc5f21d 100644
 --- a/content/browser/renderer_host/render_widget_host_view_mac.mm
 +++ b/content/browser/renderer_host/render_widget_host_view_mac.mm
-@@ -2901,9 +2901,12 @@ void RenderWidgetHostViewMac::OnDisplayMetricsChanged(
+@@ -2928,9 +2928,12 @@ void RenderWidgetHostViewMac::OnDisplayMetricsChanged(
  // Since this implementation doesn't have to wait any IPC calls, this doesn't
  // make any key-typing jank. --hbono 7/23/09
  //
@@ -444,7 +445,7 @@ index 5eb7679..5e1e09b 100644
  
  - (NSArray *)validAttributesForMarkedText {
    // This code is just copied from WebKit except renaming variables.
-@@ -2912,7 +2915,9 @@ extern NSString *NSTextInputReplacementRangeAttributeName;
+@@ -2939,7 +2942,9 @@ extern NSString *NSTextInputReplacementRangeAttributeName;
          NSUnderlineStyleAttributeName,
          NSUnderlineColorAttributeName,
          NSMarkedClauseSegmentAttributeName,
@@ -455,13 +456,13 @@ index 5eb7679..5e1e09b 100644
    }
    return validAttributesForMarkedText_.get();
 diff --git a/content/common/sandbox_mac.mm b/content/common/sandbox_mac.mm
-index ca915a7..91b8451 100644
+index 6a7f2cf..a10dcca 100644
 --- a/content/common/sandbox_mac.mm
 +++ b/content/common/sandbox_mac.mm
-@@ -543,11 +543,15 @@ bool Sandbox::EnableSandbox(int sandbox_type,
-       return false;
-   }
- #endif
+@@ -490,11 +490,15 @@ bool Sandbox::EnableSandbox(int sandbox_type,
+   bool elcap_or_later = base::mac::IsOSElCapitanOrLater();
+   if (!compiler.InsertBooleanParam("ELCAP_OR_LATER", elcap_or_later))
+     return false;
 -
 +#ifndef MAC_APP_STORE
    // Initialize sandbox.
@@ -476,69 +477,44 @@ index ca915a7..91b8451 100644
    return success;
  }
 diff --git a/media/capture/device_monitor_mac.mm b/media/capture/device_monitor_mac.mm
-index aab9884..665570c 100644
+index 2ff63e0..5feaad1 100644
 --- a/media/capture/device_monitor_mac.mm
 +++ b/media/capture/device_monitor_mac.mm
-@@ -4,7 +4,10 @@
- 
- #include "media/capture/device_monitor_mac.h"
- 
-+#ifndef MAC_APP_STORE
- #import <QTKit/QTKit.h>
-+#endif
-+#import <Foundation/Foundation.h>
- 
- #include <set>
- 
-@@ -143,6 +146,7 @@ class QTKitMonitorImpl : public DeviceMonitorMacImpl {
- 
- QTKitMonitorImpl::QTKitMonitorImpl(media::DeviceMonitorMac* monitor)
-     : DeviceMonitorMacImpl(monitor) {
+@@ -323,6 +323,7 @@ AVFoundationMonitorImpl::AVFoundationMonitorImpl(
+       device_task_runner_(device_task_runner),
+       suspend_observer_delegate_(new SuspendObserverDelegate(this)) {
+   DCHECK(main_thread_checker_.CalledOnValidThread());
 +#ifndef MAC_APP_STORE
    NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
    device_arrival_ =
-       [nc addObserverForName:QTCaptureDeviceWasConnectedNotification
-@@ -165,25 +169,30 @@ QTKitMonitorImpl::QTKitMonitorImpl(media::DeviceMonitorMac* monitor)
+       [nc addObserverForName:AVFoundationGlue::
+@@ -340,20 +341,25 @@ AVFoundationMonitorImpl::AVFoundationMonitorImpl(
                    usingBlock:^(NSNotification* notification) {
-                     OnAttributeChanged(notification);
+                     OnDeviceChanged();
                    }];
 +#endif
+   suspend_observer_delegate_->StartObserver(device_task_runner_);
  }
  
- QTKitMonitorImpl::~QTKitMonitorImpl() {
+ AVFoundationMonitorImpl::~AVFoundationMonitorImpl() {
+   DCHECK(main_thread_checker_.CalledOnValidThread());
+   suspend_observer_delegate_->ResetDeviceMonitor();
 +#ifndef MAC_APP_STORE
    NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
    [nc removeObserver:device_arrival_];
    [nc removeObserver:device_removal_];
-   [nc removeObserver:device_change_];
 +#endif
  }
  
- void QTKitMonitorImpl::OnAttributeChanged(NSNotification* notification) {
+ void AVFoundationMonitorImpl::OnDeviceChanged() {
+   DCHECK(main_thread_checker_.CalledOnValidThread());
 +#ifndef MAC_APP_STORE
-   if ([[[notification userInfo] objectForKey:QTCaptureDeviceChangedAttributeKey]
-           isEqualToString:QTCaptureDeviceSuspendedAttribute]) {
-     OnDeviceChanged();
-   }
+   suspend_observer_delegate_->OnDeviceChanged(device_task_runner_);
 +#endif
  }
  
- void QTKitMonitorImpl::OnDeviceChanged() {
-   std::vector<DeviceInfo> snapshot_devices;
--
-+#ifndef MAC_APP_STORE
-   NSArray* devices = [QTCaptureDevice inputDevices];
-   for (QTCaptureDevice* device in devices) {
-     DeviceInfo::DeviceType device_type = DeviceInfo::kUnknown;
-@@ -205,6 +214,7 @@ void QTKitMonitorImpl::OnDeviceChanged() {
-     snapshot_devices.push_back(
-         DeviceInfo([[device uniqueID] UTF8String], device_type));
-   }
-+#endif
-   ConsolidateDevicesListAndNotify(snapshot_devices);
- }
- 
-@@ -565,7 +575,9 @@ void DeviceMonitorMac::NotifyDeviceChanged(
+ }  // namespace
+@@ -469,7 +475,9 @@ void DeviceMonitorMac::NotifyDeviceChanged(
      base::SystemMonitor::DeviceType type) {
    DCHECK(thread_checker_.CalledOnValidThread());
    // TODO(xians): Remove the global variable for SystemMonitor.
@@ -562,10 +538,10 @@ index 3c3a43d..df59962 100644
  MAC_HOST_BUNDLE_ID=org.chromium.chromoting.me2me-host
  MAC_HOST_BUNDLE_NAME=ChromotingHost.bundle
 diff --git a/ui/shell_dialogs/select_file_dialog_mac.mm b/ui/shell_dialogs/select_file_dialog_mac.mm
-index e53c389..79ca929 100644
+index 1ac8122..3d0d5b2 100644
 --- a/ui/shell_dialogs/select_file_dialog_mac.mm
 +++ b/ui/shell_dialogs/select_file_dialog_mac.mm
-@@ -461,7 +461,9 @@ bool SelectFileDialogImpl::HasMultipleFileTypeChoicesImpl() {
+@@ -401,7 +401,9 @@ SelectFileDialog* CreateSelectFileDialog(SelectFileDialog::Listener* listener,
          index = 1;
        }
      } else {

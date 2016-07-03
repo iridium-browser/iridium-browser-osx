@@ -1,8 +1,8 @@
-diff --git a/content/browser/mach_broker_mac.mm b/content/browser/mach_broker_mac.mm
-index f3c4a85..c49bb1c 100644
---- a/content/browser/mach_broker_mac.mm
-+++ b/content/browser/mach_broker_mac.mm
-@@ -160,7 +160,7 @@ std::string MachBroker::GetMachPortName() {
+diff --git a/base/mac/mach_port_broker.mm b/base/mac/mach_port_broker.mm
+index bd47017..e90f1cf 100644
+--- a/base/mac/mach_port_broker.mm
++++ b/base/mac/mach_port_broker.mm
+@@ -79,7 +79,7 @@ std::string MachPortBroker::GetMachPortName(const std::string& name,
  #else
    // @APPLE_TEAM_ID@ should be set before building and should be the same as in signing script!!!
    // We rely on it to be correct in order to setup mach based IPC in sandboxed environment.
