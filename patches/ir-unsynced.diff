@@ -1,5 +1,5 @@
 diff --git a/base/files/file_util.h b/base/files/file_util.h
-index 8f7d53c..81b8e8c 100644
+index 8fd9fff..28d62d3 100644
 --- a/base/files/file_util.h
 +++ b/base/files/file_util.h
 @@ -220,6 +220,11 @@ BASE_EXPORT bool GetTempDir(FilePath* path);
@@ -429,10 +429,10 @@ index 1ae72bd..e5e0f20 100644
  }
  
 diff --git a/content/browser/renderer_host/render_widget_host_view_mac.mm b/content/browser/renderer_host/render_widget_host_view_mac.mm
-index 0581389..bc5f21d 100644
+index 9b3f3f6..72af875 100644
 --- a/content/browser/renderer_host/render_widget_host_view_mac.mm
 +++ b/content/browser/renderer_host/render_widget_host_view_mac.mm
-@@ -2928,9 +2928,12 @@ void RenderWidgetHostViewMac::OnDisplayMetricsChanged(
+@@ -2941,9 +2941,12 @@ void RenderWidgetHostViewMac::OnDisplayMetricsChanged(
  // Since this implementation doesn't have to wait any IPC calls, this doesn't
  // make any key-typing jank. --hbono 7/23/09
  //
@@ -445,7 +445,7 @@ index 0581389..bc5f21d 100644
  
  - (NSArray *)validAttributesForMarkedText {
    // This code is just copied from WebKit except renaming variables.
-@@ -2939,7 +2942,9 @@ extern NSString *NSTextInputReplacementRangeAttributeName;
+@@ -2952,7 +2955,9 @@ extern NSString *NSTextInputReplacementRangeAttributeName;
          NSUnderlineStyleAttributeName,
          NSUnderlineColorAttributeName,
          NSMarkedClauseSegmentAttributeName,
